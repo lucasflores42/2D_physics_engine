@@ -7,7 +7,7 @@ const collision_min_distance = grid_size #* sqrt(2)
 include("rigidbody_functions.jl")
 
 # -----------------------------------------------------------------------------
-#                           Unified collision pass
+#                           Calculate all collisions
 # -----------------------------------------------------------------------------
 function collision_physics!(particles, rigidbodies, id_grid)
 
@@ -86,7 +86,7 @@ function collision_physics!(particles, rigidbodies, id_grid)
 end
 
 # -----------------------------------------------------------------------------
-#                           Single-pair dispatch
+#                           Single resolve function — handles every pair type
 # -----------------------------------------------------------------------------
 function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
 
@@ -97,10 +97,10 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
         return
     end
     if p1.rigidbody != 0 && p1.rigidbody == p2.rigidbody
-        return
+        return   # same rigidbody, never self-collide
     end
     if p1.softbody != 0 && p1.softbody == p2.softbody
-        return
+        return   # same softbody, handled by its own constraints
     end
     if p1.material == "liquid" && p2.material == "gas"
         return
@@ -119,66 +119,22 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
         return
     end
 
-    if p1.rigidbody == 0 && p2.rigidbody == 0
-        resolve_free_pair!(p1, p2, i, j, r, pos_correction, vel_correction, contact_count)
-    else
-        resolve_rigidbody_pair!(particles, rigidbodies, p1, p2, r, cm_correction, V_correction, ω_correction, rb_contact_count)
-    end
-end
-
-# -----------------------------------------------------------------------------
-#                           Free particle vs free particle
-# -----------------------------------------------------------------------------
-function resolve_free_pair!(particle1, particle2, i, j, r, pos_correction, vel_correction, contact_count)
-
     overlap = collision_min_distance - r
-
-    x1, x2 = particle1.position, particle2.position
-    v1, v2 = particle1.velocity, particle2.velocity
-    m1, m2 = particle1.mass, particle2.mass
-
+    x1, x2 = p1.position, p2.position
+    v1, v2 = p1.velocity, p2.velocity
     normal = (x1 - x2) / r
-    total_mass = m1 + m2
+    r_sq = r^2
 
-    dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r^2
-    dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r^2
-
-    if particle1.active == 1
-        pos_correction[i] = pos_correction[i] + overlap * normal * (m2 / total_mass)
-        vel_correction[i] = vel_correction[i] + dv1
-        contact_count[i] += 1
-    end
-
-    if particle2.active == 1
-        pos_correction[j] = pos_correction[j] + (-overlap * normal * (m1 / total_mass))
-        vel_correction[j] = vel_correction[j] + dv2
-        contact_count[j] += 1
-    end
-end
-
-# -----------------------------------------------------------------------------
-#                           Anything involving a rigidbody
-# -----------------------------------------------------------------------------
-function resolve_rigidbody_pair!(particles, rigidbodies, p1, p2, r,
-                                  cm_correction, V_correction, ω_correction, rb_contact_count)
-
-    overlap = collision_min_distance - r
-
+    # ---- Case 1: both are rigidbody particles ----
     if p1.rigidbody != 0 && p2.rigidbody != 0
 
         rb1 = rigidbodies[p1.rigidbody]
         rb2 = rigidbodies[p2.rigidbody]
+        m1, m2 = rb1.M, rb2.M
+        total_mass = m1 + m2
 
         rb_contact_count[rb1.id] += 1
         rb_contact_count[rb2.id] += 1
-
-        x1, x2 = p1.position, p2.position
-        v1, v2 = p1.velocity, p2.velocity
-        m1, m2 = rb1.M, rb2.M
-
-        normal = (x1 - x2) / r
-        total_mass = m1 + m2
-        r_sq = r^2
 
         dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
         dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
@@ -204,18 +160,14 @@ function resolve_rigidbody_pair!(particles, rigidbodies, p1, p2, r,
         ω_correction[rb1.id] += (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
         ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
+    # ---- Case 2: only p1 is a rigidbody particle ----
     elseif p1.rigidbody != 0 && p2.rigidbody == 0
 
         rb1 = rigidbodies[p1.rigidbody]
-        rb_contact_count[rb1.id] += 1
-
-        x1, x2 = p1.position, p2.position
-        v1, v2 = p1.velocity, p2.velocity
         m1, m2 = rb1.M, p2.mass
-
-        normal = (x1 - x2) / r
         total_mass = m1 + m2
-        r_sq = r^2
+
+        rb_contact_count[rb1.id] += 1
 
         dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
         dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
@@ -229,27 +181,27 @@ function resolve_rigidbody_pair!(particles, rigidbodies, p1, p2, r,
         V_correction[rb1.id] = V_correction[rb1.id] + Δp1 / m1
         ω_correction[rb1.id] += (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
 
-        p2.position = p2.position - overlap * normal * (m1 / total_mass)
-        p2.velocity = p2.velocity + dv2
+        if p2.active == 1
+            p2.position = p2.position - overlap * normal * (m1 / total_mass)
+            p2.velocity = p2.velocity + dv2
+        end
 
-    else # p1.rigidbody == 0 && p2.rigidbody != 0
+    # ---- Case 3: only p2 is a rigidbody particle ----
+    elseif p1.rigidbody == 0 && p2.rigidbody != 0
 
         rb2 = rigidbodies[p2.rigidbody]
-        rb_contact_count[rb2.id] += 1
-
-        x1, x2 = p1.position, p2.position
-        v1, v2 = p1.velocity, p2.velocity
         m1, m2 = p1.mass, rb2.M
-
-        normal = (x1 - x2) / r
         total_mass = m1 + m2
-        r_sq = r^2
+
+        rb_contact_count[rb2.id] += 1
 
         dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
         dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
 
-        p1.position = p1.position + overlap * normal * (m2 / total_mass)
-        p1.velocity = p1.velocity + dv1
+        if p1.active == 1
+            p1.position = p1.position + overlap * normal * (m2 / total_mass)
+            p1.velocity = p1.velocity + dv1
+        end
 
         shift = overlap * normal * (m1 / total_mass)
         Δp2 = m2 * dv2
@@ -259,5 +211,26 @@ function resolve_rigidbody_pair!(particles, rigidbodies, p1, p2, r,
         cm_correction[rb2.id] = cm_correction[rb2.id] - shift
         V_correction[rb2.id] = V_correction[rb2.id] + Δp2 / m2
         ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
+
+    # ---- Case 4: neither is a rigidbody — covers free particles AND softbody particles ----
+    else
+
+        m1, m2 = p1.mass, p2.mass
+        total_mass = m1 + m2
+
+        dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
+        dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
+
+        if p1.active == 1
+            pos_correction[i] = pos_correction[i] + overlap * normal * (m2 / total_mass)
+            vel_correction[i] = vel_correction[i] + dv1
+            contact_count[i] += 1
+        end
+
+        if p2.active == 1
+            pos_correction[j] = pos_correction[j] + (-overlap * normal * (m1 / total_mass))
+            vel_correction[j] = vel_correction[j] + dv2
+            contact_count[j] += 1
+        end
     end
 end
