@@ -104,7 +104,7 @@ function create_scene()
     end
 
     # some liquid
-    for i in 1:1000
+    for i in 1:0
 
         x = 305 + 40*rand()
         y = 60 + 200*rand()
@@ -134,7 +134,7 @@ function create_scene()
     end
 
     # some gas
-    for i in 1:100
+    for i in 1:0
 
         x = 325
         y = 55 + 80*rand()
@@ -161,7 +161,7 @@ function create_scene()
     end
 
     # some powder
-    for i in 1:10
+    for i in 1:0
 
         x = (1/3)*box_size_x + rand() * (1/6)*(box_size_x - 2 * grid_size)
         y = grid_size + rand() * (box_size_y - 2 * grid_size)
@@ -189,7 +189,7 @@ function create_scene()
     create_cube!(particles, rigidbodies, 1, [100.0, 8.0], [0.0, 0.0], [0.0],15, 3)
     create_cube!(particles, rigidbodies, 2, [100-6, 25.0], [0.0, 0.0], [0.0],2, 15)
     
-    create_rope!(particles, softbodies, 1, [200.0, 200.0], 10, 0.1, grid_size)
+    create_rope!(particles, softbodies, 1, [250.0, 180.0], 10, 0.1, grid_size)
 
     return particles, liquid, gas, powder, solid, rigidbodies, softbodies
 end
@@ -242,15 +242,17 @@ function main()
         step += 1
 
         if step % 10 == 0
-            println("time of plot:")
-            plt = visualization(particles, id_grid, t)
-            println("time of display:")
-            display(plt)
+            print("time of plot:")
+            plt = @time visualization(particles, id_grid, t)
+            print("time of display:")
+            @time display(plt)
         end
-        println("time of step:")
-        simulation_step(particles, liquid, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
+        print("time of step:")
+        @time simulation_step(particles, liquid, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
         t += dt
+
+        println()
     end
 end
 
-main()
+#main()

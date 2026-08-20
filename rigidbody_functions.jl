@@ -105,7 +105,7 @@ function create_cube!(particles, rigidbodies, id, offset, v_init, ω_init, m, n)
             @SVector(zeros(2)),
             @SVector(zeros(2)),
             particle_radius,
-            1.0,
+            3.0,
             id,
             0,
             1,              # active

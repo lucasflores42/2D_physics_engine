@@ -1,11 +1,10 @@
- 
 using Plots, LinearAlgebra, StaticArrays, GLMakie
 
 include("2D_physics_engine.jl")
 
 Makie.inline!(false)
 
-particles, liquid, gas, powder, solid, rigidbodies = create_scene()
+particles, liquid, gas, powder, solid, rigidbodies, softbodies = create_scene()
 id_grid, cell_of_particle = init_grids(particles)
 
 fig = Figure(size = (900, 600))
@@ -14,12 +13,12 @@ layout_botoes = fig[1, 1] = GridLayout(tellwidth = true, tellheight = false)
 ax = Axis(fig[1, 2], title = "Ferramenta Atual: NADA", aspect = DataAspect())
 deregister_interaction!(ax, :rectanglezoom)
 
-xlims!(ax, 0, box_size_x)
-ylims!(ax, 0, box_size_y)
+GLMakie.xlims!(ax, 0, box_size_x)
+GLMakie.ylims!(ax, 0, box_size_y)
 
-material_grid_obs = Observable(build_material_grid(particles, id_grid)')
-colors = cgrad([:white, :brown, :blue, :gray, :yellow], 5, categorical=true)
-heatmap!(ax, material_grid_obs, colorrange = (0,4), colormap = colors)
+material_grid_obs = Observable(build_material_grid(particles, id_grid))
+colors = cgrad([:white, :brown, :blue, :gray, :orange], 5, categorical=true)
+GLMakie.heatmap!(ax, material_grid_obs, colorrange = (0,4), colormap = colors)
 
 btn1 = Button(layout_botoes[1, 1], label = "Liquid", buttoncolor = :blue, labelcolor = :white)
 btn2 = Button(layout_botoes[2, 1], label = "Solid", buttoncolor = :brown, labelcolor = :white)
@@ -75,17 +74,23 @@ t = 0.0
 step = 0
 @async begin
     while t < tmax && screen.window_open[]
-        simulation_step(particles, liquid, gas, powder, solid, rigidbodies, id_grid, cell_of_particle)
+        try
+            simulation_step(particles, liquid, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
 
-        step += 1
-        if step % 3 == 0
-            material_grid_obs[] = build_material_grid(particles, id_grid)
+            global step += 1
+            if step % 3 == 0
+                material_grid_obs[] = build_material_grid(particles, id_grid)
+            end
+
+            global t += dt
+        catch e
+            println("SIMULATION FAILED: ", e)
+            break
         end
-
-        t += dt
         sleep(0.001)
         yield()
     end
+    println("loop ended, t=$t, step=$step")
 end
 
 if !isinteractive()
