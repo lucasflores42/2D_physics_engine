@@ -35,7 +35,7 @@ layout_botoes = fig[1, 1] = GridLayout(tellwidth = true, tellheight = false)
 # The Axis is where the actual simulation gets drawn (column 2). Its title
 # doubles as the "which material is currently selected" indicator - we
 # update ax.title directly from the button callbacks below.
-ax = Axis(fig[1, 2], title = "Ferramenta Atual: NADA")
+ax = Axis(fig[1, 2])
 
 # Turns off GLMakie's default "drag a rectangle to zoom" interaction, since
 # we want plain left-click/drag to mean "place a particle", not "zoom".
