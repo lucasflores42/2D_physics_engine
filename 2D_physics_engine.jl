@@ -12,7 +12,7 @@ const pixel_size_y = 270
 const box_size_x = pixel_size_x * grid_size
 const box_size_y = pixel_size_y * grid_size
 
-const tmax = 100.0
+const tmax = 1000.0
 const dt = 0.01
 
 include("sph_functions.jl")
@@ -193,7 +193,6 @@ function create_scene()
 
     return particles, liquid, gas, powder, solid, rigidbodies, softbodies
 end
-
 
 # -----------------------------------------------------------------------------
 #                           Simulation step

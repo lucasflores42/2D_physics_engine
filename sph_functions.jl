@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 #                           Parameters
 # ----------------------------------------------------------------------------- 
-const smoothing_length = 0.5
+const smoothing_length = 0.2
 const liquid_target_density = 0.4
 const liquid_stiff_coef = 0.1
 const liquid_viscosity_coef = 0.1
