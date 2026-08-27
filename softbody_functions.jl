@@ -78,3 +78,34 @@ function create_rope!(particles, softbodies, id, offset, n, stiffness, rest_leng
 
     push!(softbodies, softbody_struct(indices, constraints, stiffness, pinned))
 end
+
+function create_rope2!(particles, softbodies, id, offset, n, stiffness, rest_length)
+    indices = Int[]
+
+    for k in 0:(n-1)
+        p = solid_struct(
+            offset .+ SVector(-k*rest_length, 0),
+            @SVector(zeros(2)),
+            @SVector(zeros(2)),
+            grid_size/2,
+            1.0,
+            0,
+            id,       # softbody
+            1, 1, 1,
+            "solid"
+            )
+        push!(particles, p)
+        push!(indices, length(particles))
+    end
+
+    constraints = Tuple{Int,Int,Float64}[]
+    for k in 1:(n-1)
+        push!(constraints, (k, k+1, rest_length))
+    end
+
+    pinned = fill(false, n)
+    pinned[1] = true
+    pinned[15] = true
+
+    push!(softbodies, softbody_struct(indices, constraints, stiffness, pinned))
+end

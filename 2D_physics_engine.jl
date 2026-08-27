@@ -189,7 +189,8 @@ function create_scene()
     create_cube!(particles, rigidbodies, 1, [100.0, 8.0], [0.0, 0.0], [0.0],15, 3)
     create_cube!(particles, rigidbodies, 2, [100-6, 25.0], [0.0, 0.0], [0.0],2, 15)
     
-    create_rope!(particles, softbodies, 1, [250.0, 180.0], 10, 0.1, grid_size)
+    create_rope!(particles, softbodies, 1, [250.0, 180.0], 15, 0.1, grid_size)
+    create_rope2!(particles, softbodies, 1, [200.0, 180.0], 15, 0.1, grid_size)
 
     return particles, liquid, gas, powder, solid, rigidbodies, softbodies
 end

@@ -1,8 +1,10 @@
 # -----------------------------------------------------------------------------
 #                           Parameters
 # -----------------------------------------------------------------------------
-const colision_restitution_coefficient = 0.5
+const restitution_x = 0.5
+const restitution_y = 0.0
 const collision_min_distance = grid_size #* sqrt(2)
+const max_velocity = 100.0
 
 include("rigidbody_functions.jl")
 
@@ -68,7 +70,7 @@ function collision_physics!(particles, rigidbodies, id_grid)
         p = particles[i]
         if p.active == 1 && p.rigidbody == 0 && contact_count[i] > 0
             p.position = p.position + pos_correction[i]
-            p.velocity = p.velocity + vel_correction[i]
+            p.velocity = clamp_velocity(p.velocity + vel_correction[i], max_velocity)
         end
     end
 
@@ -76,7 +78,7 @@ function collision_physics!(particles, rigidbodies, id_grid)
         nc = max(rb_contact_count[rb.id], 1)
 
         rb.cm = rb.cm + cm_correction[rb.id] / nc
-        rb.V  = rb.V  + V_correction[rb.id] / nc
+        rb.V  = clamp_velocity(rb.V + V_correction[rb.id] / nc, max_velocity)
         rb.ω  = SVector(rb.ω[1], rb.ω[2], rb.ω[3] + ω_correction[rb.id] / nc)
 
         for idx in rb.particle_indices
@@ -136,8 +138,16 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
         rb_contact_count[rb1.id] += 1
         rb_contact_count[rb2.id] += 1
 
-        dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
-        dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
+        #dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
+        #dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
+
+        dv1_x = - (1 + restitution_x) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[1] - x2[1]) / r_sq
+        dv1_y = - (1 + restitution_y) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[2] - x2[2]) / r_sq
+        dv1 = [dv1_x, dv1_y]
+        
+        dv2_x = - (1 + restitution_x) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[1] - x1[1]) / r_sq
+        dv2_y = - (1 + restitution_y) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[2] - x1[2]) / r_sq
+        dv2 = [dv2_x, dv2_y]
 
         shift1 = overlap * normal * (m2 / total_mass)
         shift2 = overlap * normal * (m1 / total_mass)
@@ -169,8 +179,13 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
 
         rb_contact_count[rb1.id] += 1
 
-        dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
-        dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
+        dv1_x = - (1 + restitution_x) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[1] - x2[1]) / r_sq
+        dv1_y = - (1 + restitution_y) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[2] - x2[2]) / r_sq
+        dv1 = [dv1_x, dv1_y]
+        
+        dv2_x = - (1 + restitution_x) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[1] - x1[1]) / r_sq
+        dv2_y = - (1 + restitution_y) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[2] - x1[2]) / r_sq
+        dv2 = [dv2_x, dv2_y]
 
         shift = overlap * normal * (m2 / total_mass)
         Δp1 = m1 * dv1
@@ -195,8 +210,13 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
 
         rb_contact_count[rb2.id] += 1
 
-        dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
-        dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
+        dv1_x = - (1 + restitution_x) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[1] - x2[1]) / r_sq
+        dv1_y = - (1 + restitution_y) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[2] - x2[2]) / r_sq
+        dv1 = [dv1_x, dv1_y]
+        
+        dv2_x = - (1 + restitution_x) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[1] - x1[1]) / r_sq
+        dv2_y = - (1 + restitution_y) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[2] - x1[2]) / r_sq
+        dv2 = [dv2_x, dv2_y]
 
         if p1.active == 1
             p1.position = p1.position + overlap * normal * (m2 / total_mass)
@@ -218,8 +238,13 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
         m1, m2 = p1.mass, p2.mass
         total_mass = m1 + m2
 
-        dv1 = - (1 + colision_restitution_coefficient) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1 - x2) / r_sq
-        dv2 = - (1 + colision_restitution_coefficient) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2 - x1) / r_sq
+        dv1_x = - (1 + restitution_x) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[1] - x2[1]) / r_sq
+        dv1_y = - (1 + restitution_y) * m2 / (m1 + m2) * dot(v1 - v2, x1 - x2) * (x1[2] - x2[2]) / r_sq
+        dv1 = [dv1_x, dv1_y]
+        
+        dv2_x = - (1 + restitution_x) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[1] - x1[1]) / r_sq
+        dv2_y = - (1 + restitution_y) * m1 / (m1 + m2) * dot(v2 - v1, x2 - x1) * (x2[2] - x1[2]) / r_sq
+        dv2 = [dv2_x, dv2_y]
 
         if p1.active == 1
             pos_correction[i] = pos_correction[i] + overlap * normal * (m2 / total_mass)
@@ -233,4 +258,12 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
             contact_count[j] += 1
         end
     end
+end
+
+function clamp_velocity(v, max_speed)
+    speed = norm(v)
+    if speed > max_speed
+        return v * (max_speed / speed)
+    end
+    return v
 end
