@@ -160,6 +160,13 @@ function particle_physics(particles, liquid, gas, powder, solid, id_grid)
             continue
         end
 
+        p.time_active += 1
+
+        if p.time_active >= p.lifetime
+            erase_particle!(p, id_grid)
+            continue   # skip the rest of this particle's physics 
+        end
+
         if p.gravity == 1
             F_gravity = -1 * calculate_gravity(p.position, p.mass, 0, solid)
         else
@@ -171,11 +178,6 @@ function particle_physics(particles, liquid, gas, powder, solid, id_grid)
         p.velocity += p.acceleration * dt
         p.position += p.velocity * dt
 
-        p.time_active += 1
-
-        if p.time_active >= p.lifetime
-            erase_particle(p, id_grid)
-        end
     end
 
     for i in 1:length(powder)

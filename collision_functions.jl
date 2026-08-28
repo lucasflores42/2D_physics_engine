@@ -11,7 +11,7 @@ include("rigidbody_functions.jl")
 # -----------------------------------------------------------------------------
 #                           Calculate all collisions
 # -----------------------------------------------------------------------------
-function collision_physics!(particles, rigidbodies, id_grid)
+function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle)
 
     n_particles = length(particles)
     pos_correction = [@SVector zeros(2) for _ in 1:n_particles]
@@ -33,7 +33,7 @@ function collision_physics!(particles, rigidbodies, id_grid)
 
         for a in 1:length(cell_particles)
             for b in a+1:length(cell_particles)
-                resolve_pair!(particles, rigidbodies, cell_particles[a], cell_particles[b], pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
+                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, cell_particles[a], cell_particles[b], pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
             end
         end
 
@@ -57,7 +57,7 @@ function collision_physics!(particles, rigidbodies, id_grid)
                         neighbor_particles = id_grid[(ni, nj)]
                         for a in cell_particles
                             for b in neighbor_particles
-                                resolve_pair!(particles, rigidbodies, a, b, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
+                                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, a, b, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
                             end
                         end
                     end
@@ -90,7 +90,7 @@ end
 # -----------------------------------------------------------------------------
 #                           Single resolve function — handles every pair type
 # -----------------------------------------------------------------------------
-function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
+function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
 
     p1 = particles[i]
     p2 = particles[j]
@@ -107,13 +107,21 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
 
     if p1.material == "powder" && p2.material == "liquid"
 
-        new_gas = gas_struct(length(particles) + 1, p1.position, p1.velocity, @SVector(zeros(2)), grid_size/2, 0.1, 0, 0, 1, 1, 1, 1, 0, 10, "gas")
-        transform_particle!(particles, powder, gas, id_grid, p1, new_gas)
+        new_gas = gas_struct(length(particles)+1, p1.position, SVector(rand(),0.0), @SVector(zeros(2)),
+                        grid_size/2, 0.1, 
+                        0, 0, 
+                        1, 1, 1, 1, 
+                        0, 300, "gas")
+        transform_particle!(particles, powder, gas, id_grid, cell_of_particle, p1, new_gas)
         return
     elseif p1.material == "liquid" && p2.material == "powder"
 
-        new_gas = gas_struct(length(particles) + 1, p2.position, p2.velocity, @SVector(zeros(2)), grid_size/2, 0.1, 0, 0, 1, 1, 1, 1, 0, 10, "gas")
-        transform_particle!(particles, powder, gas, id_grid, p2, new_gas)
+        new_gas = gas_struct(length(particles)+1, p2.position, SVector(rand(),0.0), @SVector(zeros(2)),
+                        grid_size/2, 0.1, 
+                        0, 0, 
+                        1, 1, 1, 1, 
+                        0, 300, "gas")
+        transform_particle!(particles, powder, gas, id_grid, cell_of_particle, p2, new_gas)
         return
     end
 
@@ -282,7 +290,7 @@ function clamp_velocity(v, max_speed)
     return v
 end
 
-function transform_particle!(particles, source_array, target_array, id_grid, p, new_particle)
+function transform_particle!(particles, source_array, target_array, id_grid, cell_of_particle, p, new_particle)
 
     px = Int(floor(p.position[1] / grid_size)) + 1
     py = Int(floor(p.position[2] / grid_size)) + 1
@@ -298,6 +306,7 @@ function transform_particle!(particles, source_array, target_array, id_grid, p, 
 
     push!(target_array, new_particle)
     push!(particles, new_particle)
+    push!(cell_of_particle, (px, py))   # keep it in sync with particles
 
     if !haskey(id_grid, (px, py))
         id_grid[(px, py)] = Int[]

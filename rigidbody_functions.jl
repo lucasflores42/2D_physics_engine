@@ -101,6 +101,7 @@ function create_cube!(particles, rigidbodies, id, offset, v_init, ω_init, m, n)
 
     for pos in positions
         p = solid_struct(
+            length(particles)+1,
             offset .+ pos,
             @SVector(zeros(2)),
             @SVector(zeros(2)),

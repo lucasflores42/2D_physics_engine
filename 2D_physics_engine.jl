@@ -106,10 +106,10 @@ function create_scene()
     end
 
     # some liquid
-    for i in 1:0
+    for i in 1:10
 
-        x = 305 + 40*rand()
-        y = 60 + 200*rand()
+        x = 325
+        y = 55 + 10*rand()
 
         p = liquid_struct(length(particles)+1, SVector(x,y), @SVector(zeros(2)), @SVector(zeros(2)),
                        grid_size/2, 0.1, 0, 0,
@@ -125,37 +125,24 @@ function create_scene()
         x = 325
         y = 55 + 80*rand()
 
-        p = gas_struct(
-            length(particles) + 1,
-            [x, y],           
-            [0.0, 0.0],     # velocity
-            [0.0, 0.0],     # acceleration
-            grid_size/2,    # radius
-            0.1,            # mass
-
-            0,              # rigidbody
-            0,
-
-            1,              # active 
-            1,              # collision
-            1,              # gravity
-            0,              # sph
-
-            "gas"        
-        )
+        p = gas_struct(length(particles)+1, SVector(x,y), SVector(rand(),0.0), @SVector(zeros(2)),
+                        grid_size/2, 0.1, 
+                        0, 0, 
+                        1, 1, 1, 1, 
+                        0, 300, "gas")
         push!(gas, p)
         push!(particles, p)
     end
 
     # some powder
-    for i in 1:0
+    for i in 1:10
 
-        x = (1/3)*box_size_x + rand() * (1/6)*(box_size_x - 2 * grid_size)
-        y = grid_size + rand() * (box_size_y - 2 * grid_size)
+        x = 325
+        y = 65 + 80*rand()
 
         p = powder_struct(
             length(particles) + 1,
-            [95,y],           
+            [x,y],           
             [0.0, 0.0],     # velocity
             [0.0, 0.0],     # acceleration
             grid_size/2,    # radius
@@ -192,7 +179,7 @@ function simulation_step(particles, liquid, gas, powder, solid, rigidbodies, sof
     rigidbody_physics(particles, rigidbodies)
     softbody_physics(particles, softbodies)
 
-    collision_physics!(particles, rigidbodies, id_grid)
+    collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle)
 
     update_grids!(particles, id_grid, cell_of_particle)
 end
@@ -243,4 +230,4 @@ function main()
     end
 end
 
-#main()
+main()
