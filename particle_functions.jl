@@ -9,6 +9,7 @@ const collision_min_distance = grid_size #* sqrt(2)
 #                           Particles physics
 # ----------------------------------------------------------------------------- 
 mutable struct powder_struct
+    id::Int64
     position::SVector{2, Float64}
     velocity::SVector{2, Float64}
     acceleration::SVector{2, Float64}
@@ -26,6 +27,7 @@ mutable struct powder_struct
 end
 
 mutable struct gas_struct
+    id::Int64
     position::SVector{2, Float64}
     velocity::SVector{2, Float64}
     acceleration::SVector{2, Float64}
@@ -40,10 +42,14 @@ mutable struct gas_struct
     gravity::Int64
     sph::Int64
 
+    time_active::Int64
+    lifetime::Int64
+
     material::String
 end
 
 mutable struct liquid_struct
+    id::Int64
     position::SVector{2, Float64}
     velocity::SVector{2, Float64}
     acceleration::SVector{2, Float64}
@@ -55,6 +61,9 @@ mutable struct liquid_struct
 
     density::Float64
     pressure::Float64
+    target_density::Float64
+    stiff_coef::Float64       
+    viscosity_coef::Float64 
 
     active::Int64
     collision::Int64
@@ -65,6 +74,7 @@ mutable struct liquid_struct
 end
 
 mutable struct solid_struct
+    id::Int64
     position::SVector{2, Float64}
     velocity::SVector{2, Float64}
     acceleration::SVector{2, Float64}
@@ -125,7 +135,7 @@ function particle_physics(particles, liquid, gas, powder, solid, id_grid)
             end
 
             F_pressure = -grad_pressure
-            F_viscosity = particles[i].mass * liquid_viscosity_coef * laplacian_velocity
+            F_viscosity = particles[i].mass * p.viscosity_coef * laplacian_velocity
         else
             F_pressure = @SVector zeros(2)
             F_viscosity = @SVector zeros(2)
@@ -160,6 +170,12 @@ function particle_physics(particles, liquid, gas, powder, solid, id_grid)
         p.acceleration = F_total / p.mass
         p.velocity += p.acceleration * dt
         p.position += p.velocity * dt
+
+        p.time_active += 1
+
+        if p.time_active >= p.lifetime
+            erase_particle(p, id_grid)
+        end
     end
 
     for i in 1:length(powder)
@@ -224,4 +240,20 @@ function calculate_gravity(position, mass, id, solid)
     
     #return F_gravity
     return mass * SVector(0.0, -10.0)
+end
+
+function erase_particle!(p, id_grid)
+
+    px = Int(floor(p.position[1] / grid_size)) + 1
+    py = Int(floor(p.position[2] / grid_size)) + 1
+
+    cell_ids = id_grid[(px, py)]
+    filter!(x -> x != p.id, cell_ids)
+
+    if isempty(cell_ids)
+        delete!(id_grid, (px, py))
+    end
+
+    p.active = 0
+    p.collision = 0
 end

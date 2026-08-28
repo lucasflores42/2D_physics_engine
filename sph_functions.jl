@@ -58,7 +58,7 @@ function calculate_density_pressure!(p, particles, id_grid)
         end
     end
 
-    p.pressure = liquid_stiff_coef * ((p.density/liquid_target_density)^7 - 1)
+    p.pressure = p.stiff_coef * ((p.density / p.target_density)^7 - 1)
 end
 
 function pressure_gradient(p, p2, r, r_vec)

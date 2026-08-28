@@ -46,6 +46,7 @@ function create_scene()
                 pos_y = (j - 1) * grid_size + grid_size/2
 
                 p = solid_struct(
+                    length(particles) + 1,
                     [pos_x, pos_y],           
                     [0.0, 0.0],     # velocity
                     [0.0, 0.0],     # acceleration
@@ -82,6 +83,7 @@ function create_scene()
                 pos_y = (j - 1) * grid_size + grid_size/2
 
                 p = solid_struct(
+                    length(particles) + 1,
                     [pos_x, pos_y],           
                     [0.0, 0.0],     # velocity
                     [0.0, 0.0],     # acceleration
@@ -109,26 +111,10 @@ function create_scene()
         x = 305 + 40*rand()
         y = 60 + 200*rand()
 
-        p = liquid_struct(
-            [x, y],           
-            [0.0, 0.0],     # velocity
-            [0.0, 0.0],     # acceleration
-            grid_size/2,    # radius
-            0.1,            # mass
-
-            0,              # rigidbody
-            0,
-
-            1000.0,         # density
-            0.0,            # pressure
-
-            1,              # active 
-            1,              # collision
-            1,              # gravity
-            0,              # sph
-
-            "liquid"        
-        )
+        p = liquid_struct(length(particles)+1, SVector(x,y), @SVector(zeros(2)), @SVector(zeros(2)),
+                       grid_size/2, 0.1, 0, 0,
+                       0.4, 0.0, 0.4, 0.1, 0.1,   # density, pressure, target_density, stiff_coef, viscosity_coef
+                       1, 1, 1, 1, "liquid")
         push!(liquid, p)
         push!(particles, p)
     end
@@ -140,6 +126,7 @@ function create_scene()
         y = 55 + 80*rand()
 
         p = gas_struct(
+            length(particles) + 1,
             [x, y],           
             [0.0, 0.0],     # velocity
             [0.0, 0.0],     # acceleration
@@ -167,6 +154,7 @@ function create_scene()
         y = grid_size + rand() * (box_size_y - 2 * grid_size)
 
         p = powder_struct(
+            length(particles) + 1,
             [95,y],           
             [0.0, 0.0],     # velocity
             [0.0, 0.0],     # acceleration

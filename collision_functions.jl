@@ -104,6 +104,20 @@ function resolve_pair!(particles, rigidbodies, i, j, pos_correction, vel_correct
     if p1.softbody != 0 && p1.softbody == p2.softbody
         return   # same softbody, handled by its own constraints
     end
+
+    if p1.material == "powder" && p2.material == "liquid"
+
+        new_gas = gas_struct(length(particles) + 1, p1.position, p1.velocity, @SVector(zeros(2)), grid_size/2, 0.1, 0, 0, 1, 1, 1, 1, 0, 10, "gas")
+        transform_particle!(particles, powder, gas, id_grid, p1, new_gas)
+        return
+    elseif p1.material == "liquid" && p2.material == "powder"
+
+        new_gas = gas_struct(length(particles) + 1, p2.position, p2.velocity, @SVector(zeros(2)), grid_size/2, 0.1, 0, 0, 1, 1, 1, 1, 0, 10, "gas")
+        transform_particle!(particles, powder, gas, id_grid, p2, new_gas)
+        return
+    end
+
+
     if p1.material == "liquid" && p2.material == "gas"
         return
     elseif p1.material == "gas" && p2.material == "liquid"
@@ -266,4 +280,27 @@ function clamp_velocity(v, max_speed)
         return v * (max_speed / speed)
     end
     return v
+end
+
+function transform_particle!(particles, source_array, target_array, id_grid, p, new_particle)
+
+    px = Int(floor(p.position[1] / grid_size)) + 1
+    py = Int(floor(p.position[2] / grid_size)) + 1
+
+    cell_ids = id_grid[(px, py)]
+    filter!(x -> x != p.id, cell_ids)
+    if isempty(cell_ids)
+        delete!(id_grid, (px, py))
+    end
+
+    p.active = 0
+    p.collision = 0
+
+    push!(target_array, new_particle)
+    push!(particles, new_particle)
+
+    if !haskey(id_grid, (px, py))
+        id_grid[(px, py)] = Int[]
+    end
+    push!(id_grid[(px, py)], new_particle.id)
 end
