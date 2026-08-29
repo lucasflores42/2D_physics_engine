@@ -92,6 +92,11 @@ end
 # -----------------------------------------------------------------------------
 function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
 
+    n_particles = length(pos_correction)  
+    if i > n_particles || j > n_particles
+        return   
+    end
+
     p1 = particles[i]
     p2 = particles[j]
 
@@ -121,7 +126,7 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
                         0, 0, 
                         1, 1, 1, 1, 
                         0, 300, "gas")
-        transform_particle!(particles, powder, gas, id_grid, cell_of_particle, p2, new_gas)
+        #transform_particle!(particles, powder, gas, id_grid, cell_of_particle, p2, new_gas)
         return
     end
 
