@@ -30,6 +30,7 @@ function create_scene()
 
     particles = Union{liquid_struct, solid_struct, gas_struct, powder_struct}[]
     liquid = liquid_struct[]
+    liquid2 = liquid_struct[]
     solid = solid_struct[]
     gas = gas_struct[]
     powder = powder_struct[]
@@ -114,8 +115,22 @@ function create_scene()
         p = liquid_struct(length(particles)+1, SVector(x,y), @SVector(zeros(2)), @SVector(zeros(2)),
                        grid_size/2, 0.1, 0, 0,
                        0.4, 0.0, 0.4, 0.1, 0.1,   # density, pressure, target_density, stiff_coef, viscosity_coef
-                       1, 1, 1, 1, "liquid")
+                       1, 1, 1, 1, 
+                       1, "liquid")
         push!(liquid, p)
+        push!(particles, p)
+    end
+    for i in 1:10
+
+        x = 325
+        y = 55 + 10*rand()
+
+        p = liquid_struct(length(particles)+1, SVector(x,y), @SVector(zeros(2)), @SVector(zeros(2)),
+                       grid_size/2, 0.1, 0, 0,
+                       0.2, 0.0, 0.2, 0.1, 0.1,   # density, pressure, target_density, stiff_coef, viscosity_coef
+                       1, 1, 1, 1, 
+                       1, "liquid")
+        push!(liquid2, p)
         push!(particles, p)
     end
 
@@ -167,15 +182,15 @@ function create_scene()
     create_rope!(particles, softbodies, 1, [250.0, 180.0], 15, 0.1, grid_size)
     create_rope2!(particles, softbodies, 1, [200.0, 180.0], 15, 0.1, grid_size)
 
-    return particles, liquid, gas, powder, solid, rigidbodies, softbodies
+    return particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies
 end
 
 # -----------------------------------------------------------------------------
 #                           Simulation step
 # ----------------------------------------------------------------------------- 
-function simulation_step(particles, liquid, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
+function simulation_step(particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
 
-    particle_physics(particles, liquid, gas, powder, solid, id_grid)
+    particle_physics(particles, liquid, liquid2, gas, powder, solid, id_grid)
     rigidbody_physics(particles, rigidbodies)
     softbody_physics(particles, softbodies)
 
@@ -191,9 +206,9 @@ function visualization(particles, id_grid, step)
 
     material_grid = build_material_grid(particles, id_grid)
 
-    colors = cgrad([:white, :brown, :blue, :gray, :orange], 5, categorical=true)
+    colors = cgrad([:white, :brown, :blue, :green, :gray, :orange], 5, categorical=true)
 
-    plt = heatmap(material_grid', color=colors, clims=(0,4),
+    plt = heatmap(material_grid', color=colors, clims=(0,5),
                   xlim=(0, box_size_x), ylim=(0, box_size_y),
                   title="Time $(round(step, digits=2))s",
                   xlabel="X", ylabel="Y",
@@ -209,7 +224,7 @@ function main()
 
     t = 0.0
     step = 0
-    particles, liquid, gas, powder, solid, rigidbodies, softbodies = create_scene()
+    particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies = create_scene()
     id_grid, cell_of_particle = init_grids(particles)
 
     while t < tmax
@@ -223,7 +238,7 @@ function main()
             @time display(plt)
         end
         print("time of step:")
-        @time simulation_step(particles, liquid, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
+        @time simulation_step(particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
         t += dt
 
         println()
