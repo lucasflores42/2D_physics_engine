@@ -8,6 +8,8 @@ mutable struct rigidbody_struct
     V::SVector{2, Float64}
     ω::SVector{3, Float64}
     M::Float64
+    bonds::Vector{Tuple{Int,Int}}   
+    break_threshold::Float64
 end
 
 function rigidbody_physics(particles, rigidbodies)
@@ -128,13 +130,37 @@ function create_cube!(particles, rigidbodies, id, offset, v_init, ω_init, m, n)
         particles[i].velocity = v_init + SVector(-ω_init[1]*r[2], ω_init[1]*r[1])
     end
 
+    bonds = build_grid_bonds(positions, particle_diam)
+
     rb = rigidbody_struct(
         id,
         indices,
         cm,
         SVector(v_init[1], v_init[2]),
         SVector(0.0, 0.0, ω_init[1]),
-        total_mass
+        total_mass,
+        bonds,
+        50
     )
     push!(rigidbodies, rb)
+end
+
+
+function build_grid_bonds(local_positions, spacing)
+    bonds = Tuple{Int,Int}[]
+    n = length(local_positions)
+    for a in 1:n
+        for b in a+1:n
+            d = norm(local_positions[a] - local_positions[b])
+            if d < spacing * 1.1   # adjacent cell (up/down/left/right), not diagonal
+                push!(bonds, (a, b))
+            end
+        end
+    end
+    return bonds
+end
+
+function split_rigidbody!(particles, rigidbodies, rb)
+
+   
 end

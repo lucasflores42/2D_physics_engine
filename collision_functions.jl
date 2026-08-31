@@ -24,6 +24,7 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
     ω_correction  = zeros(n_rb)
     rb_contact_count = zeros(Int, n_rb)
 
+    pending_breaks = rigidbody_struct[]
     cells = keys(id_grid)
 
     for cell in cells
@@ -33,7 +34,7 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
 
         for a in 1:length(cell_particles)
             for b in a+1:length(cell_particles)
-                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, cell_particles[a], cell_particles[b], pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
+                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, cell_particles[a], cell_particles[b], pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
             end
         end
 
@@ -57,7 +58,7 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
                         neighbor_particles = id_grid[(ni, nj)]
                         for a in cell_particles
                             for b in neighbor_particles
-                                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, a, b, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
+                                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, a, b, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
                             end
                         end
                     end
@@ -85,12 +86,16 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
             particles[idx].position = particles[idx].position + cm_correction[rb.id] / nc
         end
     end
+
+    for rb in unique(pending_breaks)
+        split_rigidbody!(particles, rigidbodies, rb)
+    end
 end
 
 # -----------------------------------------------------------------------------
 #                           Single resolve function — handles every pair type
 # -----------------------------------------------------------------------------
-function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count)
+function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
 
     n_particles = length(pos_correction)  
     if i > n_particles || j > n_particles
@@ -126,7 +131,7 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
                         0, 0, 
                         1, 1, 1, 1, 
                         0, 300, "gas")
-        #transform_particle!(particles, powder, gas, id_grid, cell_of_particle, p2, new_gas)
+        transform_particle!(particles, powder, gas, id_grid, cell_of_particle, p2, new_gas)
         return
     end
 
@@ -197,6 +202,23 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
         ω_correction[rb1.id] += (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
         ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
+        if norm(Δp1) > rb1.break_threshold
+            local_idx1 = findfirst(==(i), rb1.particle_indices)   # which particle in rb1 got hit
+            broken_bond1 = findfirst(b -> local_idx1 in b, rb1.bonds)
+            if broken_bond1 !== nothing
+                deleteat!(rb1.bonds, broken_bond1)
+                push!(pending_breaks, rb1)   # just says "check rb1 for a split", nothing more
+            end
+        end
+        if norm(Δp2) > rb2.break_threshold
+            local_idx2 = findfirst(==(j), rb2.particle_indices)   # which particle in rb2 got hit
+            broken_bond2 = findfirst(b -> local_idx2 in b, rb2.bonds)
+            if broken_bond2 !== nothing
+                deleteat!(rb2.bonds, broken_bond2)
+                push!(pending_breaks, rb2)
+            end
+        end
+
     # ---- Case 2: only p1 is a rigidbody particle ----
     elseif p1.rigidbody != 0 && p2.rigidbody == 0
 
@@ -226,6 +248,15 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
         if p2.active == 1
             p2.position = p2.position - overlap * normal * (m1 / total_mass)
             p2.velocity = p2.velocity + dv2
+        end
+
+        if norm(Δp1) > rb1.break_threshold
+            local_idx1 = findfirst(==(i), rb1.particle_indices)   # which particle in rb1 got hit
+            broken_bond1 = findfirst(b -> local_idx1 in b, rb1.bonds)
+            if broken_bond1 !== nothing
+                deleteat!(rb1.bonds, broken_bond1)
+                push!(pending_breaks, rb1)   # just says "check rb1 for a split", nothing more
+            end
         end
 
     # ---- Case 3: only p2 is a rigidbody particle ----
@@ -258,6 +289,15 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
         cm_correction[rb2.id] = cm_correction[rb2.id] - shift
         V_correction[rb2.id] = V_correction[rb2.id] + Δp2 / m2
         ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
+
+        if norm(Δp2) > rb2.break_threshold
+            local_idx2 = findfirst(==(j), rb2.particle_indices)   # which particle in rb2 got hit
+            broken_bond2 = findfirst(b -> local_idx2 in b, rb2.bonds)
+            if broken_bond2 !== nothing
+                deleteat!(rb2.bonds, broken_bond2)
+                push!(pending_breaks, rb2)
+            end
+        end
 
     # ---- Case 4: neither is a rigidbody — covers free particles AND softbody particles ----
     else
