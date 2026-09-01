@@ -24,7 +24,6 @@ function softbody_physics(particles, softbodies)
             p.position = p.position + p.velocity * dt
         end
 
-
         # enforce constraints: pull each connected pair back to rest_length
         for (li, lj, rest_length) in sb.constraints
             i, j = sb.particle_indices[li], sb.particle_indices[lj]

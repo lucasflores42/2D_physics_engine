@@ -24,7 +24,7 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
     ω_correction  = zeros(n_rb)
     rb_contact_count = zeros(Int, n_rb)
 
-    pending_breaks = rigidbody_struct[]
+    pending_breaks = Tuple{rigidbody_struct, Tuple{Int,Int}}[]
     cells = keys(id_grid)
 
     for cell in cells
@@ -87,8 +87,8 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
         end
     end
 
-    for rb in unique(pending_breaks)
-        split_rigidbody!(particles, rigidbodies, rb)
+    for (rb, broken_bond) in pending_breaks
+        split_rigidbody!(particles, rigidbodies, rb, broken_bond)
     end
 end
 
@@ -104,6 +104,7 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
 
     p1 = particles[i]
     p2 = particles[j]
+
 
     if p1.active == 0 && p2.active == 0
         return
@@ -204,18 +205,20 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
 
         if norm(Δp1) > rb1.break_threshold
             local_idx1 = findfirst(==(i), rb1.particle_indices)   # which particle in rb1 got hit
-            broken_bond1 = findfirst(b -> local_idx1 in b, rb1.bonds)
-            if broken_bond1 !== nothing
-                deleteat!(rb1.bonds, broken_bond1)
-                push!(pending_breaks, rb1)   # just says "check rb1 for a split", nothing more
+            broken_bond_position1 = findfirst(b -> local_idx1 in b, rb1.bonds)
+            if broken_bond_position1 !== nothing
+                the_bond1 = rb1.bonds[broken_bond_position1]
+                deleteat!(rb1.bonds, broken_bond_position1)
+                push!(pending_breaks, (rb1, the_bond1))
             end
         end
         if norm(Δp2) > rb2.break_threshold
             local_idx2 = findfirst(==(j), rb2.particle_indices)   # which particle in rb2 got hit
-            broken_bond2 = findfirst(b -> local_idx2 in b, rb2.bonds)
-            if broken_bond2 !== nothing
-                deleteat!(rb2.bonds, broken_bond2)
-                push!(pending_breaks, rb2)
+            broken_bond_position2 = findfirst(b -> local_idx2 in b, rb2.bonds)
+            if broken_bond_position2 !== nothing
+                the_bond2 = rb2.bonds[broken_bond_position2]
+                deleteat!(rb2.bonds, broken_bond_position2)
+                push!(pending_breaks, (rb2, the_bond2))
             end
         end
 
@@ -252,10 +255,11 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
 
         if norm(Δp1) > rb1.break_threshold
             local_idx1 = findfirst(==(i), rb1.particle_indices)   # which particle in rb1 got hit
-            broken_bond1 = findfirst(b -> local_idx1 in b, rb1.bonds)
-            if broken_bond1 !== nothing
-                deleteat!(rb1.bonds, broken_bond1)
-                push!(pending_breaks, rb1)   # just says "check rb1 for a split", nothing more
+            broken_bond_position1 = findfirst(b -> local_idx1 in b, rb1.bonds)
+            if broken_bond_position1 !== nothing
+                the_bond1 = rb1.bonds[broken_bond_position1]
+                deleteat!(rb1.bonds, broken_bond_position1)
+                push!(pending_breaks, (rb1, the_bond1))
             end
         end
 
@@ -292,10 +296,11 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
 
         if norm(Δp2) > rb2.break_threshold
             local_idx2 = findfirst(==(j), rb2.particle_indices)   # which particle in rb2 got hit
-            broken_bond2 = findfirst(b -> local_idx2 in b, rb2.bonds)
-            if broken_bond2 !== nothing
-                deleteat!(rb2.bonds, broken_bond2)
-                push!(pending_breaks, rb2)
+            broken_bond_position2 = findfirst(b -> local_idx2 in b, rb2.bonds)
+            if broken_bond_position2 !== nothing
+                the_bond2 = rb2.bonds[broken_bond_position2]
+                deleteat!(rb2.bonds, broken_bond_position2)
+                push!(pending_breaks, (rb2, the_bond2))
             end
         end
 
@@ -337,8 +342,16 @@ end
 
 function transform_particle!(particles, source_array, target_array, id_grid, cell_of_particle, p, new_particle)
 
+    if p.active == 0
+        return   # already transformed earlier this same scan 
+    end
+
     px = Int(floor(p.position[1] / grid_size)) + 1
     py = Int(floor(p.position[2] / grid_size)) + 1
+
+    if !haskey(id_grid, (px, py))
+        return   # defensive: cell already gone somehow, nothing to remove
+    end
 
     cell_ids = id_grid[(px, py)]
     filter!(x -> x != p.id, cell_ids)

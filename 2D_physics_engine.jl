@@ -206,7 +206,7 @@ function visualization(particles, id_grid, step)
 
     material_grid = build_material_grid(particles, id_grid)
 
-    colors = cgrad([:white, :brown, :blue, :green, :gray, :orange], 5, categorical=true)
+    colors = cgrad([:white, :brown, :blue, :green, :gray, :orange], 6, categorical=true)
 
     plt = heatmap(material_grid', color=colors, clims=(0,5),
                   xlim=(0, box_size_x), ylim=(0, box_size_y),
@@ -245,4 +245,4 @@ function main()
     end
 end
 
-#main()
+main()

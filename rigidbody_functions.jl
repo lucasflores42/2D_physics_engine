@@ -160,7 +160,138 @@ function build_grid_bonds(local_positions, spacing)
     return bonds
 end
 
-function split_rigidbody!(particles, rigidbodies, rb)
+    # check the two groups of bounds
+    # subtract and recalculate the info of the first
+    # create a new body with the rest
 
-   
+function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
+
+    a, b = broken_bond
+    n = length(rb.particle_indices)
+
+    if a > n || b > n
+        return
+    end
+
+    valid_bonds = Tuple{Int,Int}[]
+    for bond in rb.bonds
+        if bond[1] <= n && bond[2] <= n
+            push!(valid_bonds, bond)
+        end
+    end
+    rb.bonds = valid_bonds
+
+    in_group_a = falses(n)
+    in_group_a[a] = true
+
+    changed = true
+    while changed
+        changed = false
+        for bond in rb.bonds
+            x = bond[1]
+            y = bond[2]
+            if in_group_a[x] && !in_group_a[y]
+                in_group_a[y] = true
+                changed = true
+            elseif in_group_a[y] && !in_group_a[x]
+                in_group_a[x] = true
+                changed = true
+            end
+        end
+    end
+
+    if in_group_a[b]
+        return
+    end
+
+    group_a = Int[]
+    group_b = Int[]
+    for k in 1:n
+        if in_group_a[k]
+            push!(group_a, k)
+        else
+            push!(group_b, k)
+        end
+    end
+
+    original_indices = rb.particle_indices
+    original_bonds = rb.bonds
+
+    # ---- group_a: either stays as rb, or becomes a free particle if alone ----
+
+    if length(group_a) == 1
+        lone_index = original_indices[group_a[1]]
+        particles[lone_index].rigidbody = 0
+    else
+        new_particle_indices_a = Int[]
+        for k in group_a
+            push!(new_particle_indices_a, original_indices[k])
+        end
+        rb.particle_indices = new_particle_indices_a
+
+        new_bonds_a = Tuple{Int,Int}[]
+        for bond in original_bonds
+            x = bond[1]
+            y = bond[2]
+            if in_group_a[x] && in_group_a[y]
+                push!(new_bonds_a, (x, y))
+            end
+        end
+        rb.bonds = new_bonds_a
+
+        piece_particles_a = []
+        for i in rb.particle_indices
+            push!(piece_particles_a, particles[i])
+        end
+        cm_a, mass_a = calculate_center_of_mass(piece_particles_a)
+        rb.cm = cm_a
+        rb.M = mass_a
+
+        for i in rb.particle_indices
+            particles[i].rigidbody = rb.id
+        end
+    end
+
+    # ---- group_b: either becomes a free particle, or a brand new rigidbody ----
+
+    if length(group_b) == 1
+        lone_index = original_indices[group_b[1]]
+        particles[lone_index].rigidbody = 0
+    else
+        new_particle_indices_b = Int[]
+        for k in group_b
+            push!(new_particle_indices_b, original_indices[k])
+        end
+
+        remap = Dict{Int,Int}()
+        for new_local in 1:length(group_b)
+            old_local = group_b[new_local]
+            remap[old_local] = new_local
+        end
+
+        new_bonds_b = Tuple{Int,Int}[]
+        for bond in original_bonds
+            x = bond[1]
+            y = bond[2]
+            if !in_group_a[x] && !in_group_a[y]
+                new_x = remap[x]
+                new_y = remap[y]
+                push!(new_bonds_b, (new_x, new_y))
+            end
+        end
+
+        piece_particles_b = []
+        for i in new_particle_indices_b
+            push!(piece_particles_b, particles[i])
+        end
+        cm_b, mass_b = calculate_center_of_mass(piece_particles_b)
+
+        new_id = length(rigidbodies) + 1
+        for i in new_particle_indices_b
+            particles[i].rigidbody = new_id
+        end
+
+        new_rigidbody = rigidbody_struct(new_id, new_particle_indices_b, cm_b, rb.V, rb.ω, mass_b, new_bonds_b, rb.break_threshold)
+        push!(rigidbodies, new_rigidbody)
+    end
 end
