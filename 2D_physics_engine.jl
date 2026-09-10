@@ -107,7 +107,7 @@ function create_scene()
     end
 
     # some liquid
-    for i in 1:10
+    for i in 1:0
 
         x = 325
         y = 55 + 10*rand()
@@ -120,7 +120,7 @@ function create_scene()
         push!(liquid, p)
         push!(particles, p)
     end
-    for i in 1:10
+    for i in 1:0
 
         x = 325
         y = 55 + 10*rand()
@@ -150,7 +150,7 @@ function create_scene()
     end
 
     # some powder
-    for i in 1:10
+    for i in 1:0
 
         x = 325
         y = 65 + 80*rand()
@@ -177,7 +177,8 @@ function create_scene()
     end
 
     create_cube!(particles, rigidbodies, 1, [100.0, 8.0], [0.0, 0.0], [0.0],15, 3)
-    create_cube!(particles, rigidbodies, 2, [100-6, 25.0], [0.0, 0.0], [0.0],2, 15)
+    create_cube!(particles, rigidbodies, 2, [100-6, 25.0], [0.0, 0.0], [0.0],2, 27)
+    create_cube!(particles, rigidbodies, 3, [100+12, 8.0], [0.0, 0.0], [0.0],15, 3)
     
     create_rope!(particles, softbodies, 1, [250.0, 180.0], 15, 0.1, grid_size)
     create_rope2!(particles, softbodies, 1, [200.0, 180.0], 15, 0.1, grid_size)
@@ -245,4 +246,4 @@ function main()
     end
 end
 
-main()
+#main()

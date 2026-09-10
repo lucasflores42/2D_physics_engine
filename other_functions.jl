@@ -126,21 +126,21 @@ function spawn_particle!(particles, liquid, liquid2, gas, powder, solid, id_grid
     y = (py - 1) * grid_size + grid_size/2
 
     if material == "powder"
-        p = powder_struct(length(particles)+1, SVector(x,y), @SVector(zeros(2)), @SVector(zeros(2)),
+        p = powder_struct(length(particles)+1, SVector(x,y), SVector(0,-100), @SVector(zeros(2)),
                            grid_size/2, 10.0, 0, 0, 1, 1, 1, "powder")
         push!(powder, p)
     elseif material == "liquid"
         p = liquid_struct(length(particles)+1, SVector(x,y), SVector(rand(),0), @SVector(zeros(2)),
                     grid_size/2, 0.1, 0, 0,
-                    0.4, 0.0, 0.4, 0.1, 0.1,
+                    1000, 0.0, 1000, 50, 0.1,
                     1, 1, 1, 1,
                     1,                # color_id
                     "liquid")
         push!(liquid, p)
     elseif material == "liquid2"
         p = liquid_struct(length(particles)+1, SVector(x,y), SVector(rand(),0), @SVector(zeros(2)),
-                    grid_size/2, 0.1, 0, 0,
-                    0.2, 0.0, 0.2, 0.1, 0.1,
+                    grid_size/2, 0.02, 0, 0,
+                    200, 0.0, 200, 50, 0.1,
                     1, 1, 1, 1,
                     2,                # color_id
                     "liquid")

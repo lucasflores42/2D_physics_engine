@@ -140,7 +140,7 @@ function create_cube!(particles, rigidbodies, id, offset, v_init, ω_init, m, n)
         SVector(0.0, 0.0, ω_init[1]),
         total_mass,
         bonds,
-        50
+        99
     )
     push!(rigidbodies, rb)
 end
