@@ -203,25 +203,6 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
         ω_correction[rb1.id] += (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
         ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
-        if norm(p1.velocity) > rb1.break_threshold
-            local_idx1 = findfirst(==(i), rb1.particle_indices)   # which particle in rb1 got hit
-            broken_bond_position1 = findfirst(b -> local_idx1 in b, rb1.bonds)
-            if broken_bond_position1 !== nothing
-                the_bond1 = rb1.bonds[broken_bond_position1]
-                deleteat!(rb1.bonds, broken_bond_position1)
-                push!(pending_breaks, (rb1, the_bond1))
-            end
-        end
-        if norm(p2.velocity) > rb2.break_threshold
-            local_idx2 = findfirst(==(j), rb2.particle_indices)   # which particle in rb2 got hit
-            broken_bond_position2 = findfirst(b -> local_idx2 in b, rb2.bonds)
-            if broken_bond_position2 !== nothing
-                the_bond2 = rb2.bonds[broken_bond_position2]
-                deleteat!(rb2.bonds, broken_bond_position2)
-                push!(pending_breaks, (rb2, the_bond2))
-            end
-        end
-
     # ---- Case 2: only p1 is a rigidbody particle ----
     elseif p1.rigidbody != 0 && p2.rigidbody == 0
 
@@ -253,13 +234,15 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
             p2.velocity = p2.velocity + dv2
         end
 
-        if norm(p1.velocity) > rb1.break_threshold
-            local_idx1 = findfirst(==(i), rb1.particle_indices)   # which particle in rb1 got hit
-            broken_bond_position1 = findfirst(b -> local_idx1 in b, rb1.bonds)
-            if broken_bond_position1 !== nothing
-                the_bond1 = rb1.bonds[broken_bond_position1]
-                deleteat!(rb1.bonds, broken_bond_position1)
-                push!(pending_breaks, (rb1, the_bond1))
+        if norm(p2.velocity) > rb1.break_threshold
+            idxs = findall(bond_tuple -> j in bond_tuple, rb1.bonds)
+            if !isempty(idxs)
+                for k in sort(idxs, rev=true)
+                    the_bond1 = rb1.bonds[k]
+                    deleteat!(rb1.bonds, k)
+                    push!(pending_breaks, (rb1, the_bond1))
+                    erase_particle!(particles[i], id_grid)
+                end
             end
         end
 
@@ -294,13 +277,17 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
         V_correction[rb2.id] = V_correction[rb2.id] + Δp2 / m2
         ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
-        if norm(p2.velocity) > rb2.break_threshold
-            local_idx2 = findfirst(==(j), rb2.particle_indices)   # which particle in rb2 got hit
-            broken_bond_position2 = findfirst(b -> local_idx2 in b, rb2.bonds)
-            if broken_bond_position2 !== nothing
-                the_bond2 = rb2.bonds[broken_bond_position2]
-                deleteat!(rb2.bonds, broken_bond_position2)
-                push!(pending_breaks, (rb2, the_bond2))
+        if norm(p1.velocity) > rb2.break_threshold
+            # j is the rb particle index
+            # array of indices of all bonds that include j
+            idxs = findall(bond_tuple -> j in bond_tuple, rb2.bonds)
+            if !isempty(idxs)
+                for k in sort(idxs, rev=true)
+                    the_bond2 = rb2.bonds[k]
+                    deleteat!(rb2.bonds, k)
+                    push!(pending_breaks, (rb2, the_bond2))
+                    erase_particle!(particles[j], id_grid)
+                end
             end
         end
 
@@ -346,35 +333,11 @@ function transform_particle!(particles, source_array, source2_array, target_arra
         return   # already transformed earlier this same scan
     end
 
-    # remove p from its grid cell
-    px = Int(floor(p.position[1] / grid_size)) + 1
-    py = Int(floor(p.position[2] / grid_size)) + 1
-
-    if haskey(id_grid, (px, py))
-        cell_ids = id_grid[(px, py)]
-        filter!(x -> x != p.id, cell_ids)
-        if isempty(cell_ids)
-            delete!(id_grid, (px, py))
-        end
-    end
-
-    p.active = 0
-    p.collision = 0
+    # remove p from its grid cell 
+    erase_particle!(p, id_grid)
 
     # remove p2 from its grid cell 
-    px2 = Int(floor(p2.position[1] / grid_size)) + 1
-    py2 = Int(floor(p2.position[2] / grid_size)) + 1
-
-    if haskey(id_grid, (px2, py2))
-        cell_ids2 = id_grid[(px2, py2)]
-        filter!(x -> x != p2.id, cell_ids2)
-        if isempty(cell_ids2)
-            delete!(id_grid, (px2, py2))
-        end
-    end
-
-    p2.active = 0
-    p2.collision = 0
+    erase_particle!(p2, id_grid)
 
     # spawn the new gas particle
     push!(target_array, new_particle)

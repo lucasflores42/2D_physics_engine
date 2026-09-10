@@ -1,5 +1,5 @@
 #import Pkg
-#Pkg.add(["StaticArrays", "Plots", "LinearAlgebra", "GLMakie])
+#Pkg.add(["StaticArrays", "Plots", "LinearAlgebra", "GLMakie"])
 using Plots, LinearAlgebra, StaticArrays #, GLMakie
 
 # -----------------------------------------------------------------------------

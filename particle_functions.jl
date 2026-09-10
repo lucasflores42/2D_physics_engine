@@ -250,15 +250,17 @@ function calculate_gravity(position, mass, id, solid)
 end
 
 function erase_particle!(p, id_grid)
-
+    
     px = Int(floor(p.position[1] / grid_size)) + 1
     py = Int(floor(p.position[2] / grid_size)) + 1
 
-    cell_ids = id_grid[(px, py)]
-    filter!(x -> x != p.id, cell_ids)
+    if haskey(id_grid, (px, py))
+        cell_ids = id_grid[(px, py)]
+        filter!(x -> x != p.id, cell_ids)
 
-    if isempty(cell_ids)
-        delete!(id_grid, (px, py))
+        if isempty(cell_ids)
+            delete!(id_grid, (px, py))
+        end
     end
 
     p.active = 0
