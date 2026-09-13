@@ -92,7 +92,7 @@ mutable struct solid_struct
     material::String
 end
 
-function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_grid)
+function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_grid, cell_of_particle)
 
 
     all_liquids = [liquid; liquid2]
@@ -168,7 +168,7 @@ function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_gri
         p.time_active += 1
 
         if p.time_active >= p.lifetime
-            erase_particle!(p, id_grid)
+            erase_particle!(p, id_grid, cell_of_particle)
             continue   # skip the rest of this particle's physics 
         end
 
@@ -249,10 +249,11 @@ function calculate_gravity(position, mass, id, solid)
     return mass * SVector(0.0, -10.0)
 end
 
-function erase_particle!(p, id_grid)
+function erase_particle!(p, id_grid, cell_of_particle)
     
-    px = Int(floor(p.position[1] / grid_size)) + 1
-    py = Int(floor(p.position[2] / grid_size)) + 1
+    #px = Int(floor(p.position[1] / grid_size)) + 1
+    #py = Int(floor(p.position[2] / grid_size)) + 1
+    px, py = cell_of_particle[p.id]
 
     if haskey(id_grid, (px, py))
         cell_ids = id_grid[(px, py)]

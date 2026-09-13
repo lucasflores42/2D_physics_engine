@@ -11,7 +11,7 @@ include("rigidbody_functions.jl")
 # -----------------------------------------------------------------------------
 #                           Calculate all collisions
 # -----------------------------------------------------------------------------
-function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle)
+function collision_physics!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle)
 
     n_particles = length(particles)
     pos_correction = [@SVector zeros(2) for _ in 1:n_particles]
@@ -34,7 +34,7 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
 
         for a in 1:length(cell_particles)
             for b in a+1:length(cell_particles)
-                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, cell_particles[a], cell_particles[b], pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
+                resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle, cell_particles[a], cell_particles[b], pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
             end
         end
 
@@ -58,7 +58,7 @@ function collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_o
                         neighbor_particles = id_grid[(ni, nj)]
                         for a in cell_particles
                             for b in neighbor_particles
-                                resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, a, b, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
+                                resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle, a, b, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
                             end
                         end
                     end
@@ -95,7 +95,7 @@ end
 # -----------------------------------------------------------------------------
 #                           Single resolve function — handles every pair type
 # -----------------------------------------------------------------------------
-function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
+function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
 
     n_particles = length(pos_correction)  
     if i > n_particles || j > n_particles
@@ -123,7 +123,7 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
                         0, 0, 
                         1, 1, 1, 1, 
                         0, 300, "gas")
-        transform_particle!(particles, powder, liquid, gas, id_grid, cell_of_particle, p1, p2, new_gas)
+        transform_particle!(particles, gas, id_grid, cell_of_particle, p1, p2, new_gas)
         return
     elseif p1.material == "liquid" && p2.material == "powder"
 
@@ -132,7 +132,7 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
                         0, 0, 
                         1, 1, 1, 1, 
                         0, 300, "gas")
-        transform_particle!(particles, powder, liquid, gas, id_grid, cell_of_particle, p1, p2, new_gas)
+        transform_particle!(particles, gas, id_grid, cell_of_particle, p1, p2, new_gas)
         return
     end
 
@@ -241,7 +241,7 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
                     the_bond1 = rb1.bonds[k]
                     deleteat!(rb1.bonds, k)
                     push!(pending_breaks, (rb1, the_bond1))
-                    erase_particle!(particles[i], id_grid)
+                    erase_particle!(particles[i], id_grid, cell_of_particle)
                 end
             end
         end
@@ -286,7 +286,7 @@ function resolve_pair!(particles, rigidbodies, powder, gas, id_grid, cell_of_par
                     the_bond2 = rb2.bonds[k]
                     deleteat!(rb2.bonds, k)
                     push!(pending_breaks, (rb2, the_bond2))
-                    erase_particle!(particles[j], id_grid)
+                    erase_particle!(particles[j], id_grid, cell_of_particle)
                 end
             end
         end
@@ -327,17 +327,20 @@ function clamp_velocity(v, max_speed)
     return v
 end
 
-function transform_particle!(particles, source_array, source2_array, target_array, id_grid, cell_of_particle, p, p2, new_particle)
+function transform_particle!(particles, target_array, id_grid, cell_of_particle, p, p2, new_particle)
 
     if p.active == 0 || p2.active == 0
         return   # already transformed earlier this same scan
     end
 
+    px = Int(floor(p.position[1] / grid_size)) + 1
+    py = Int(floor(p.position[2] / grid_size)) + 1
+
     # remove p from its grid cell 
-    erase_particle!(p, id_grid)
+    erase_particle!(p, id_grid, cell_of_particle)
 
     # remove p2 from its grid cell 
-    erase_particle!(p2, id_grid)
+    erase_particle!(p2, id_grid, cell_of_particle)
 
     # spawn the new gas particle
     push!(target_array, new_particle)

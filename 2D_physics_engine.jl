@@ -107,7 +107,7 @@ function create_scene()
     end
 
     # some liquid
-    for i in 1:0
+    for i in 1:10
 
         x = 325
         y = 55 + 10*rand()
@@ -150,7 +150,7 @@ function create_scene()
     end
 
     # some powder
-    for i in 1:0
+    for i in 1:10
 
         x = 325
         y = 65 + 80*rand()
@@ -191,11 +191,11 @@ end
 # ----------------------------------------------------------------------------- 
 function simulation_step(particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
 
-    particle_physics(particles, liquid, liquid2, gas, powder, solid, id_grid)
+    particle_physics(particles, liquid, liquid2, gas, powder, solid, id_grid, cell_of_particle)
     rigidbody_physics(particles, rigidbodies)
     softbody_physics(particles, softbodies)
 
-    collision_physics!(particles, rigidbodies, powder, gas, id_grid, cell_of_particle)
+    collision_physics!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle)
 
     update_grids!(particles, id_grid, cell_of_particle)
 end
