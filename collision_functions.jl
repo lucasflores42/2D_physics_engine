@@ -3,8 +3,10 @@
 # -----------------------------------------------------------------------------
 const restitution_x = 0.5
 const restitution_y = 0.0
+const restitution_angular = 0.5
 const collision_min_distance = grid_size #* sqrt(2)
 const max_velocity = 100.0
+const max_angular_velocity = 20.0
 
 include("rigidbody_functions.jl")
 
@@ -80,7 +82,8 @@ function collision_physics!(particles, rigidbodies, powder, liquid, gas, id_grid
 
         rb.cm = rb.cm + cm_correction[rb.id] / nc
         rb.V  = clamp_velocity(rb.V + V_correction[rb.id] / nc, max_velocity)
-        rb.ω  = SVector(rb.ω[1], rb.ω[2], rb.ω[3] + ω_correction[rb.id] / nc)
+        #rb.ω  = SVector(rb.ω[1], rb.ω[2], rb.ω[3] + ω_correction[rb.id] / nc)
+        rb.ω  = SVector(rb.ω[1], rb.ω[2], clamp_angular_velocity(rb.ω[3] + ω_correction[rb.id] / nc, max_angular_velocity))
 
         for idx in rb.particle_indices
             particles[idx].position = particles[idx].position + cm_correction[rb.id] / nc
@@ -200,8 +203,8 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
         V_correction[rb1.id] = V_correction[rb1.id] + Δp1 / m1
         V_correction[rb2.id] = V_correction[rb2.id] + Δp2 / m2
 
-        ω_correction[rb1.id] += (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
-        ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
+        ω_correction[rb1.id] += restitution_angular * (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
+        ω_correction[rb2.id] += restitution_angular * (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
     # ---- Case 2: only p1 is a rigidbody particle ----
     elseif p1.rigidbody != 0 && p2.rigidbody == 0
@@ -227,7 +230,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
 
         cm_correction[rb1.id] = cm_correction[rb1.id] + shift
         V_correction[rb1.id] = V_correction[rb1.id] + Δp1 / m1
-        ω_correction[rb1.id] += (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
+        ω_correction[rb1.id] += restitution_angular * (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
 
         if p2.active == 1
             p2.position = p2.position - overlap * normal * (m1 / total_mass)
@@ -242,6 +245,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
                     deleteat!(rb1.bonds, k)
                     push!(pending_breaks, (rb1, the_bond1))
                     erase_particle!(particles[i], id_grid, cell_of_particle)
+                    erase_particle!(particles[j], id_grid, cell_of_particle)
                 end
             end
         end
@@ -275,7 +279,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
 
         cm_correction[rb2.id] = cm_correction[rb2.id] - shift
         V_correction[rb2.id] = V_correction[rb2.id] + Δp2 / m2
-        ω_correction[rb2.id] += (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
+        ω_correction[rb2.id] += restitution_angular * (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
         if norm(p1.velocity) > rb2.break_threshold
             # j is the rb particle index
@@ -287,6 +291,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
                     deleteat!(rb2.bonds, k)
                     push!(pending_breaks, (rb2, the_bond2))
                     erase_particle!(particles[j], id_grid, cell_of_particle)
+                    erase_particle!(particles[i], id_grid, cell_of_particle)
                 end
             end
         end
@@ -325,6 +330,13 @@ function clamp_velocity(v, max_speed)
         return v * (max_speed / speed)
     end
     return v
+end
+
+function clamp_angular_velocity(ω, max_ω)
+    if abs(ω) > max_ω
+        return sign(ω) * max_ω
+    end
+    return ω
 end
 
 function transform_particle!(particles, target_array, id_grid, cell_of_particle, p, p2, new_particle)

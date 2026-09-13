@@ -53,7 +53,7 @@ function calculate_inertia(particles, rb)
         r = p.position - rb.cm
         inertia += p.mass * (r[1]^2 + r[2]^2)
     end
-    return inertia 
+    return max(inertia, 1.0)
 end
 
 function calculate_inertia_tensor(particles, rb)
