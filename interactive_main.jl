@@ -159,7 +159,7 @@ step = 0
         end
 
         global t += dt
-        println("t = $(round(t, digits=2))s | step: $(round(step_time*1000, digits=2))ms | render: $(round(render_time*1000, digits=2))ms")
+        #println("t = $(round(t, digits=2))s | step: $(round(step_time*1000, digits=2))ms | render: $(round(render_time*1000, digits=2))ms")
 
         sleep(0.001)
         yield()

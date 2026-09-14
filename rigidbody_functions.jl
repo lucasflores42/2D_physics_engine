@@ -165,36 +165,33 @@ end
 # create a new body with the rest
 function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
 
+    # drop any particle indices that have been destroyed
     rb.particle_indices = filter(idx -> particles[idx].active == 1, rb.particle_indices)
 
-    a_global, b_global = broken_bond
-
-    # ensure the broken bond endpoints are part of this rigidbody
-    particle_set = Set(rb.particle_indices)
-    if !(a_global in particle_set) || !(b_global in particle_set)
-        return
+    if length(rb.particle_indices) <= 1
+        return   # nothing left to check connectivity on
     end
 
-    # build adjacency among current rb particles and filter invalid bonds
+    particle_set = Set(rb.particle_indices)
+
+    # also drop any bonds referencing a now-dead particle
+    rb.bonds = filter(bond -> bond[1] in particle_set && bond[2] in particle_set, rb.bonds)
+
+    # BFS from whichever live particle we have, to find what's still connected
+    start = first(rb.particle_indices)
+
     adj = Dict{Int, Vector{Int}}()
     for pid in rb.particle_indices
         adj[pid] = Int[]
     end
-    valid_bonds = Tuple{Int,Int}[]
-    for bond in rb.bonds
-        x, y = bond
-        if x in particle_set && y in particle_set
-            push!(valid_bonds, bond)
-            push!(adj[x], y)
-            push!(adj[y], x)
-        end
+    for (x, y) in rb.bonds
+        push!(adj[x], y)
+        push!(adj[y], x)
     end
-    rb.bonds = valid_bonds
 
-    # flood-fill (BFS) from a_global to find its connected component
     visited = Set{Int}()
-    queue = [a_global]
-    push!(visited, a_global)
+    queue = [start]
+    push!(visited, start)
     while !isempty(queue)
         cur = popfirst!(queue)
         for nb in adj[cur]
@@ -205,12 +202,11 @@ function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
         end
     end
 
-    # if b_global is still connected, nothing to split
-    if b_global in visited
+    # if everything is still reachable, nothing actually split
+    if length(visited) == length(rb.particle_indices)
         return
     end
 
-    # partition into global-id groups
     group_a = collect(visited)
     group_b = [pid for pid in rb.particle_indices if !(pid in visited)]
 

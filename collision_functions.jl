@@ -5,8 +5,8 @@ const restitution_x = 0.5
 const restitution_y = 0.0
 const restitution_angular = 0.5
 const collision_min_distance = grid_size #* sqrt(2)
-const max_velocity = 10.0
-const max_angular_velocity = 10.0
+const max_velocity = 50.0
+const max_angular_velocity = 20.0
 
 include("rigidbody_functions.jl")
 
@@ -237,9 +237,13 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
             p2.velocity = p2.velocity + dv2
         end
 
-        if norm(p2.velocity) > rb1.break_threshold
-            idxs = findall(bond_tuple -> j in bond_tuple, rb1.bonds)
+        if norm(p2.velocity) > rb1.break_threshold && p2.material == "powder"
+
+            # returns the positions within the rb1.bonds array where the predicate is true
+            idxs = findall(bond_tuple -> i in bond_tuple, rb1.bonds)
+   
             if !isempty(idxs)
+                # deleta os bonds quebrados e adiciona à lista de pending_breaks
                 for k in sort(idxs, rev=true)
                     the_bond1 = rb1.bonds[k]
                     deleteat!(rb1.bonds, k)
@@ -247,6 +251,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
                     erase_particle!(particles[i], id_grid, cell_of_particle)
                     erase_particle!(particles[j], id_grid, cell_of_particle)
                 end
+                println("bonds broken: $(idxs)")
             end
         end
 
@@ -281,7 +286,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
         V_correction[rb2.id] = V_correction[rb2.id] + Δp2 / m2
         ω_correction[rb2.id] += restitution_angular * (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
-        if norm(p1.velocity) > rb2.break_threshold
+        if norm(p1.velocity) > rb2.break_threshold && p1.material == "powder"
             # j is the rb particle index
             # array of indices of all bonds that include j
             idxs = findall(bond_tuple -> j in bond_tuple, rb2.bonds)
@@ -293,6 +298,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
                     erase_particle!(particles[j], id_grid, cell_of_particle)
                     erase_particle!(particles[i], id_grid, cell_of_particle)
                 end
+                println("bonds broken: $(idxs)")
             end
         end
 
