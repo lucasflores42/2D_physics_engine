@@ -13,7 +13,7 @@ const box_size_x = pixel_size_x * grid_size
 const box_size_y = pixel_size_y * grid_size
 
 const tmax = 1000.0
-const dt = 0.01
+const dt = 0.005
 
 include("sph_functions.jl")
 include("rigidbody_functions.jl")

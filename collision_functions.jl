@@ -5,8 +5,8 @@ const restitution_x = 0.5
 const restitution_y = 0.0
 const restitution_angular = 0.5
 const collision_min_distance = grid_size #* sqrt(2)
-const max_velocity = 100.0
-const max_angular_velocity = 20.0
+const max_velocity = 10.0
+const max_angular_velocity = 10.0
 
 include("rigidbody_functions.jl")
 

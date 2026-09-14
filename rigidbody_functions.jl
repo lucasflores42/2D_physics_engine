@@ -108,7 +108,7 @@ function create_cube!(particles, rigidbodies, id, offset, v_init, ω_init, m, n)
             @SVector(zeros(2)),
             @SVector(zeros(2)),
             particle_radius,
-            3.0,
+            10.0,            # mass
             id,
             0,
             1,              # active
@@ -140,7 +140,7 @@ function create_cube!(particles, rigidbodies, id, offset, v_init, ω_init, m, n)
         SVector(0.0, 0.0, ω_init[1]),
         total_mass,
         bonds,
-        99
+        10
     )
     push!(rigidbodies, rb)
 end
@@ -164,6 +164,8 @@ end
 # subtract and recalculate the info of the first
 # create a new body with the rest
 function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
+
+    rb.particle_indices = filter(idx -> particles[idx].active == 1, rb.particle_indices)
 
     a_global, b_global = broken_bond
 
@@ -233,6 +235,8 @@ function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
         cm_a, mass_a = calculate_center_of_mass(piece_particles_a)
         rb.cm = cm_a
         rb.M = mass_a
+        println("group_a particles: ", [p.position for p in piece_particles_a], " -> cm=", cm_a)   # <-- HERE
+
 
         for i in rb.particle_indices
             particles[i].rigidbody = rb.id
@@ -256,6 +260,7 @@ function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
 
         piece_particles_b = [particles[i] for i in new_particle_indices_b]
         cm_b, mass_b = calculate_center_of_mass(piece_particles_b)
+        println("group_b particles: ", [p.position for p in piece_particles_b], " -> cm=", cm_b)   # <-- HERE
 
         new_id = length(rigidbodies) + 1
         for i in new_particle_indices_b
