@@ -199,6 +199,7 @@ function simulation_step(particles, liquid, liquid2, gas, powder, solid, rigidbo
     softbody_physics(particles, softbodies)
 
     collision_physics!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle)
+    #clamp_particles(particles)
 
     update_grids!(particles, id_grid, cell_of_particle)
 end

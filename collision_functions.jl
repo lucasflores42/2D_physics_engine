@@ -2,7 +2,7 @@
 #                           Parameters
 # -----------------------------------------------------------------------------
 const restitution_x = 0.5
-const restitution_y = 0.0
+const restitution_y = 0.3
 const restitution_angular = 0.5
 const collision_min_distance = grid_size #* sqrt(2)
 const max_velocity = 50.0
@@ -91,7 +91,13 @@ function collision_physics!(particles, rigidbodies, powder, liquid, gas, id_grid
         end
     end
 
+    # only one break per rigidbody per frame
+    processed_rigidbody_ids = Set{Int}()
     for (rb, broken_bond) in pending_breaks
+        if rb.id in processed_rigidbody_ids
+            continue
+        end
+        push!(processed_rigidbody_ids, rb.id)
         split_rigidbody!(particles, rigidbodies, rb, broken_bond)
     end
 end
@@ -109,10 +115,12 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
     p1 = particles[i]
     p2 = particles[j]
 
-
     if p1.active == 0 && p2.active == 0
         return
     end
+    if p1.collision == 0 || p2.collision == 0
+        return
+    end 
     if p1.rigidbody != 0 && p1.rigidbody == p2.rigidbody
         return   # same rigidbody, never self-collide
     end

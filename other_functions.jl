@@ -154,7 +154,9 @@ function spawn_particle!(particles, liquid, liquid2, gas, powder, solid, id_grid
         push!(gas, p)
     elseif material == "solid"
         p = solid_struct(length(particles)+1, SVector(x,y), @SVector(zeros(2)), @SVector(zeros(2)),
-                          grid_size/2, 1.0, 0, 0, 0, 1, 0, "solid")
+                          grid_size/2, 1000000.0, 
+                          0, 0, 
+                          0, 1, 0, "solid")
         push!(solid, p)
     else
         return

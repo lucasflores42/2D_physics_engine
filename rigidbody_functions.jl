@@ -269,6 +269,13 @@ function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
     group_a = collect(visited)
     group_b = [pid for pid in rb.particle_indices if !(pid in visited)]
 
+    # Keep the original rigidbody on the larger component. This avoids leaving
+    # rb.particle_indices pointing at a one-particle fragment that was detached.
+    if length(group_a) == 1 && length(group_b) > 1
+        group_a, group_b = group_b, group_a
+        visited = Set(group_a)
+    end
+
     original_bonds = rb.bonds
 
     # ---- group_a: either stays as rb, or becomes a free particle if alone ----
