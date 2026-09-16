@@ -7,6 +7,7 @@ const restitution_angular = 0.5
 const collision_min_distance = grid_size #* sqrt(2)
 const max_velocity = 50.0
 const max_angular_velocity = 20.0
+const friction_coef = 0.3
 
 include("rigidbody_functions.jl")
 
@@ -191,6 +192,20 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
         Δp1 = m1 * dv1
         Δp2 = m2 * dv2
 
+        # friction correction
+        tangent = SVector(-normal[2], normal[1])
+        v_rel = v1 - v2
+        vt = dot(v_rel, tangent)
+
+        jn = norm(Δp1)   # normal impulse magnitude, already mass-scaled
+        jt = -vt * (m1 * m2 / (m1 + m2))
+        jt = clamp(jt, -friction_coef * jn, friction_coef * jn)
+
+        friction_impulse = jt * tangent
+
+        Δp1 = Δp1 + friction_impulse
+        Δp2 = Δp2 - friction_impulse    
+
         r1_rel = p1.position - rb1.cm
         r2_rel = p2.position - rb2.cm
 
@@ -225,6 +240,19 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
 
         shift = overlap * normal * (m2 / total_mass)
         Δp1 = m1 * dv1
+
+        # friction correction
+        tangent = SVector(-normal[2], normal[1])
+        v_rel = v1 - v2
+        vt = dot(v_rel, tangent)
+
+        jn = norm(Δp1)
+        jt = -vt * (m1 * m2 / (m1 + m2))
+        jt = clamp(jt, -friction_coef * jn, friction_coef * jn)
+
+        friction_impulse = jt * tangent
+        Δp1 = Δp1 + friction_impulse
+
         r1_rel = p1.position - rb1.cm
         I1 = calculate_inertia(particles, rb1)
 
@@ -279,6 +307,19 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
 
         shift = overlap * normal * (m1 / total_mass)
         Δp2 = m2 * dv2
+
+        # friction correction
+        tangent = SVector(-normal[2], normal[1])
+        v_rel = v1 - v2
+        vt = dot(v_rel, tangent)
+
+        jn = norm(Δp2)
+        jt = -vt * (m1 * m2 / (m1 + m2))
+        jt = clamp(jt, -friction_coef * jn, friction_coef * jn)
+
+        friction_impulse = jt * tangent
+        Δp2 = Δp2 - friction_impulse
+
         r2_rel = p2.position - rb2.cm
         I2 = calculate_inertia(particles, rb2)
 
