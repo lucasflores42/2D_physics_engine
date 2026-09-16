@@ -236,44 +236,49 @@ function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
     # also drop any bonds referencing a now-dead particle
     rb.bonds = filter(bond -> bond[1] in particle_set && bond[2] in particle_set, rb.bonds)
 
-    # BFS from whichever live particle we have, to find what's still connected
-    start = first(rb.particle_indices)
-
+    # build adjacency list for the rigidbody's particles
     adj = Dict{Int, Vector{Int}}()
     for pid in rb.particle_indices
         adj[pid] = Int[]
     end
+
+    # add the bonds in both directions
     for (x, y) in rb.bonds
         push!(adj[x], y)
         push!(adj[y], x)
     end
 
-    visited = Set{Int}()
-    queue = [start]
-    push!(visited, start)
-    while !isempty(queue)
-        cur = popfirst!(queue)
-        for nb in adj[cur]
-            if !(nb in visited)
-                push!(visited, nb)
-                push!(queue, nb)
+    # BFS from whichever live particle we have, to find what's connected to it
+    start = first(rb.particle_indices)
+    connected_particles = Set([start])
+    particles_to_visit = [start]
+    next_particle = 1
+
+    while next_particle <= length(particles_to_visit)
+        current_particle = particles_to_visit[next_particle]
+        next_particle += 1
+
+        for neighboring_particle in adj[current_particle]
+            #if neighboring_particle ∉ connected_particles
+            if !(neighboring_particle in connected_particles)
+                push!(connected_particles, neighboring_particle)
+                push!(particles_to_visit, neighboring_particle)
             end
         end
     end
 
     # if everything is still reachable, nothing actually split
-    if length(visited) == length(rb.particle_indices)
+    if length(connected_particles) == length(rb.particle_indices)
         return
     end
 
-    group_a = collect(visited)
-    group_b = [pid for pid in rb.particle_indices if !(pid in visited)]
+    group_a = collect(connected_particles)
+    group_b = [pid for pid in rb.particle_indices if pid ∉ connected_particles]
 
-    # Keep the original rigidbody on the larger component. This avoids leaving
-    # rb.particle_indices pointing at a one-particle fragment that was detached.
+    # Keep the original rigidbody on the larger component
     if length(group_a) == 1 && length(group_b) > 1
         group_a, group_b = group_b, group_a
-        visited = Set(group_a)
+        connected_particles = Set(group_a)
     end
 
     original_bonds = rb.bonds
@@ -287,7 +292,7 @@ function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
         new_bonds_a = Tuple{Int,Int}[]
         for bond in original_bonds
             x, y = bond
-            if (x in visited) && (y in visited)
+            if (x in connected_particles) && (y in connected_particles)
                 push!(new_bonds_a, (x, y))
             end
         end
@@ -315,14 +320,14 @@ function split_rigidbody!(particles, rigidbodies, rb, broken_bond)
         new_bonds_b = Tuple{Int,Int}[]
         for bond in original_bonds
             x, y = bond
-            if !(x in visited) && !(y in visited)
+            if (x ∉ connected_particles) && (y ∉ connected_particles)
                 push!(new_bonds_b, (x, y))
             end
         end
 
         piece_particles_b = [particles[i] for i in new_particle_indices_b]
         cm_b, mass_b = calculate_center_of_mass(piece_particles_b)
-        println("group_b particles: ", [p.position for p in piece_particles_b], " -> cm=", cm_b)   # <-- HERE
+        println("group_b particles: ", [p.position for p in piece_particles_b], " -> cm=", cm_b)   
 
         new_id = length(rigidbodies) + 1
         for i in new_particle_indices_b
