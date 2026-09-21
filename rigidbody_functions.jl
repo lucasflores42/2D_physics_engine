@@ -17,32 +17,30 @@ function rigidbody_physics(particles, rigidbodies)
     for rb in rigidbodies
 
         # translation
+        old_cm = rb.cm
         #F_gravity = @SVector zeros(2)
         F_gravity = calculate_gravity(rb.cm, rb.M, 0, nothing)
 
         rb.V += (F_gravity / rb.M) * dt      
         translation = rb.V * dt
-        new_cm = rb.cm + translation         
+        rb.cm += translation         
 
         # rotation
         angle = rb.ω[3] * dt
-        cos_a = cos(angle)
-        sin_a = sin(angle)
+        R = @SMatrix [cos(angle)  -sin(angle);
+                      sin(angle)   cos(angle)]
 
         for idx in rb.particle_indices
             p = particles[idx]
 
-            r = p.position - rb.cm
+            r = p.position - old_cm
+            r_rot = R * r
 
-            r_rot = SVector(cos_a*r[1] - sin_a*r[2], sin_a*r[1] + cos_a*r[2])
+            p.position = old_cm + r_rot
 
-            p.position = new_cm + r_rot
-
-            r_new = p.position - new_cm
-            p.velocity = rb.V + SVector(-rb.ω[3]*r_new[2], rb.ω[3]*r_new[1])
+            # v = V + ω × r
+            p.velocity = rb.V + SVector(-rb.ω[3]*r[2], rb.ω[3]*r[1])
         end
-
-        rb.cm = new_cm
     end
 end
 

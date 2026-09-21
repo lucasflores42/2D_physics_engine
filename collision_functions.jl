@@ -201,7 +201,9 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
         Δp2 = m2 * dv2
 
         # friction correction
-        tangent = SVector(-normal[2], normal[1])
+        R90 = @SMatrix [0.0  -1.0;
+                        1.0   0.0]
+        tangent = R90 * normal
         v_rel = v1 - v2
         vt = dot(v_rel, tangent)
 
