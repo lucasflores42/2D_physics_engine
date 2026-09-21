@@ -207,7 +207,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
         v_rel = v1 - v2
         vt = dot(v_rel, tangent)
 
-        jn = norm(Δp1)   # normal impulse magnitude, already mass-scaled
+        jn = norm(Δp1)   
         jt = -vt * (m1 * m2 / (m1 + m2))
         jt = clamp(jt, -friction_coef * jn, friction_coef * jn)
 
@@ -228,6 +228,7 @@ function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cel
         V_correction[rb1.id] = V_correction[rb1.id] + Δp1 / m1
         V_correction[rb2.id] = V_correction[rb2.id] + Δp2 / m2
 
+        # ω = I⁻¹ * (r × Δp)
         ω_correction[rb1.id] += restitution_angular * (r1_rel[1]*Δp1[2] - r1_rel[2]*Δp1[1]) / I1
         ω_correction[rb2.id] += restitution_angular * (r2_rel[1]*Δp2[2] - r2_rel[2]*Δp2[1]) / I2
 
