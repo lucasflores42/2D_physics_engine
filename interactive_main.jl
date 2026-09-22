@@ -160,7 +160,7 @@ step = 0
         global step += 1
 
         render_time = 0.0
-        if step % 3 == 0
+        if step % 10 == 0
             render_time = @elapsed (material_grid_obs[] = build_material_grid(particles, id_grid))
         end
 

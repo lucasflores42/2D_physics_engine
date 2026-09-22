@@ -181,7 +181,7 @@ function create_scene()
     create_cube!(particles, rigidbodies, length(rigidbodies)+1, [100+12, 8.0], [0.0, 0.0], [0.0],15, 3)
 
     create_sphere!(particles, rigidbodies, length(rigidbodies)+1, [100.0, 200.0], [0.0, 0.0], [0.0], 10)
-    create_sphere!(particles, rigidbodies, length(rigidbodies)+1, [328.0, 200.0], [0.0, 0.0], [0.0], 10)
+    #create_sphere!(particles, rigidbodies, length(rigidbodies)+1, [328.0, 200.0], [0.0, 0.0], [0.0], 10)
     
     create_rope!(particles, softbodies, length(softbodies)+1, [250.0, 180.0], 15, 0.1, grid_size)
     create_rope2!(particles, softbodies, length(softbodies)+1, [200.0, 180.0], 15, 0.1, grid_size)

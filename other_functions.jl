@@ -32,7 +32,10 @@ function material_code(material, color_id=0)
     end
 end
 function init_grids(particles)
+
+    # stores id's of particles in the cell (x,y)
     id_grid = Dict{Tuple{Int,Int}, Vector{Int}}()
+    # stores the cell (x,y) of each particle
     cell_of_particle = Vector{Tuple{Int,Int}}(undef, length(particles))
 
     for i in 1:length(particles)
@@ -89,6 +92,8 @@ end
 const material_priority = Dict("solid" => 1, "powder" => 2, "liquid" => 3, "gas" => 4)
 
 function build_material_grid(particles, id_grid)
+
+    # matrix to hold the material code for each cell in the simulation grid
     material_grid = zeros(Int, pixel_size_x, pixel_size_y)
 
     for (cell, ids) in id_grid
