@@ -9,7 +9,6 @@ const max_velocity = 50.0
 const max_angular_velocity = 20.0
 const friction_coef = 0.3
 
-include("rigidbody_functions.jl")
 
 # -----------------------------------------------------------------------------
 #                           Calculate all collisions

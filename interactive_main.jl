@@ -65,6 +65,9 @@ btn2 = Button(layout_botoes[2, 1], label = "Solid", buttoncolor = :brown, labelc
 btn3 = Button(layout_botoes[3, 1], label = "Gas", buttoncolor = :gray, labelcolor = :white)
 btn4 = Button(layout_botoes[4, 1], label = "Powder", buttoncolor = :orange, labelcolor = :white)
 btn5 = Button(layout_botoes[5, 1], label = "Liquid2", buttoncolor = :green, labelcolor = :white)
+btn6 = Button(layout_botoes[6, 1], label = "|", buttoncolor = :brown, labelcolor = :white)
+btn7 = Button(layout_botoes[7, 1], label = "-", buttoncolor = :brown, labelcolor = :white)
+btn8 = Button(layout_botoes[8, 1], label = "o", buttoncolor = :brown, labelcolor = :white)
 
 # tipo_atual ("current type") tracks which material is selected right now.
 # 0 = nothing selected yet.
@@ -79,10 +82,13 @@ on(btn2.clicks) do _; tipo_atual[] = 2; end
 on(btn3.clicks) do _; tipo_atual[] = 3; end
 on(btn4.clicks) do _; tipo_atual[] = 4; end
 on(btn5.clicks) do _; tipo_atual[] = 5; end
+on(btn6.clicks) do _; tipo_atual[] = 6; end
+on(btn7.clicks) do _; tipo_atual[] = 7; end
+on(btn8.clicks) do _; tipo_atual[] = 8; end
 
 # Maps tipo_atual's numeric code to the actual material name string that
 # spawn_particle! expects.
-material_names = Dict(1 => "liquid", 2 => "solid", 3 => "gas", 4 => "powder", 5 => "liquid2")
+material_names = Dict(1 => "liquid", 2 => "solid", 3 => "gas", 4 => "powder", 5 => "liquid2", 6 => "rigidbody1", 7 => "rigidbody2", 8 => "rigidbody3")
 
 # Tracks whether the left mouse button is currently held down, so we can
 # support "click and drag to paint" instead of just single clicks.
@@ -107,7 +113,7 @@ function adicionar_particula_se_ativo()
             py = Int(floor(posicao[2]/grid_size)) + 1
 
             if 1 <= px <= pixel_size_x && 1 <= py <= pixel_size_y
-                spawn_particle!(particles, liquid, liquid2, gas, powder, solid, id_grid, cell_of_particle,
+                spawn_particle!(particles, liquid, liquid2, gas, powder, solid, rigidbodies, id_grid, cell_of_particle,
                                  px, py, material_names[tipo_atual[]])
             end
         end
@@ -159,7 +165,7 @@ step = 0
         end
 
         global t += dt
-        #println("t = $(round(t, digits=2))s | step: $(round(step_time*1000, digits=2))ms | render: $(round(render_time*1000, digits=2))ms")
+        println("t = $(round(t, digits=2))s | step: $(round(step_time*1000, digits=2))ms | render: $(round(render_time*1000, digits=2))ms")
 
         sleep(0.001)
         yield()

@@ -41,7 +41,9 @@ function calculate_density_pressure!(p, particles, id_grid)
 
     for di in -sph_cell_range:sph_cell_range
         for dj in -sph_cell_range:sph_cell_range
+
             ni, nj = px + di, py + dj
+            
             if ni < 1 || ni > pixel_size_x || nj < 1 || nj > pixel_size_y || !haskey(id_grid, (ni, nj))
                 continue
             end

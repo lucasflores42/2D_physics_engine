@@ -36,7 +36,7 @@ function rigidbody_physics(particles, rigidbodies)
             r = p.position - old_cm
             r_rot = R * r
 
-            p.position = old_cm + r_rot
+            p.position = rb.cm + r_rot
 
             # v = V + ω × r
             p.velocity = rb.V + SVector(-rb.ω[3]*r[2], rb.ω[3]*r[1])

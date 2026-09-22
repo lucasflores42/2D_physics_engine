@@ -120,10 +120,30 @@ function build_material_grid(particles, id_grid)
     return material_grid
 end
 
-function spawn_particle!(particles, liquid, liquid2, gas, powder, solid, id_grid, cell_of_particle, px, py, material)
+function spawn_particle!(particles, liquid, liquid2, gas, powder, solid, rigidbodies, id_grid, cell_of_particle, px, py, material)
 
     x = (px - 1) * grid_size + grid_size/2
     y = (py - 1) * grid_size + grid_size/2
+
+    if material == "rigidbody1"
+        create_cube!(particles, rigidbodies, length(rigidbodies)+1,
+                    SVector(x,y), [0.0,0.0], [0.0], 15, 3)
+        append!(cell_of_particle, fill((-1,-1), length(particles) - length(cell_of_particle)))
+        update_grids!(particles, id_grid, cell_of_particle)
+        return
+    elseif material == "rigidbody2"
+        create_cube!(particles, rigidbodies, length(rigidbodies)+1,
+                    SVector(x,y), [0.0,0.0], [0.0], 2, 27)
+        append!(cell_of_particle, fill((-1,-1), length(particles) - length(cell_of_particle)))
+        update_grids!(particles, id_grid, cell_of_particle)
+        return
+    elseif material == "rigidbody3"
+        create_sphere!(particles, rigidbodies, length(rigidbodies)+1,
+                    SVector(x,y), [0.0,0.0], [0.0], 10)
+        append!(cell_of_particle, fill((-1,-1), length(particles) - length(cell_of_particle)))
+        update_grids!(particles, id_grid, cell_of_particle)
+        return
+    end
 
     if material == "powder"
         p = powder_struct(length(particles)+1, SVector(x,y), SVector(0,-100), @SVector(zeros(2)),
