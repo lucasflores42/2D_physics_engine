@@ -2,7 +2,7 @@
 #                           Parameters
 # -----------------------------------------------------------------------------
 const restitution_x = 0.5
-const restitution_y = 0.4
+const restitution_y = 0.3
 const restitution_angular = 0.3
 const collision_min_distance = grid_size #* sqrt(2)
 const max_velocity = 50.0
