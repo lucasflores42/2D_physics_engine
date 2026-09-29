@@ -20,7 +20,7 @@ function rigidbody_physics(particles, rigidbodies)
         # translation
         old_cm = rb.cm
         #F_gravity = @SVector zeros(2)
-        F_gravity = calculate_gravity(rb.cm, rb.M, 0, nothing)
+        F_gravity = calculate_gravity(rb.cm, rb.M, rb.id, rigidbodies)
 
         rb.V += (F_gravity / rb.M) * dt      
         translation = rb.V * dt
@@ -203,6 +203,64 @@ function create_sphere!(particles, rigidbodies, id, offset, v_init, ω_init, r)
     push!(rigidbodies, rb)
 end
 
+function create_sphere2!(particles, rigidbodies, id, offset, v_init, ω_init, r)
+    particle_radius = grid_size/2
+    particle_diam = 2 * particle_radius
+
+    positions = SVector{2,Float64}[]
+    for row in 0:(2*r)
+        for col in 0:(2*r)
+            if (row - r)^2 + (col - r)^2 <= r^2 
+                push!(positions, SVector(col * particle_diam, row * particle_diam))
+            end
+        end
+    end
+
+    indices = Int[]
+
+    for pos in positions
+        p = solid_struct(
+            length(particles)+1,
+            offset .+ pos,
+            @SVector(zeros(2)),
+            @SVector(zeros(2)),
+            particle_radius,
+            1000.0,            # mass
+            id,
+            0,
+            1,              # active
+            1,              # collision
+            1,              # gravity
+            "solid"
+        )
+        push!(particles, p)
+        push!(indices, length(particles))
+    end
+
+    # Calculate center of mass
+    cube_particles = [particles[i] for i in indices]
+    cm, total_mass = calculate_center_of_mass(cube_particles)
+
+    # Set initial velocities
+    for i in indices
+        r = particles[i].position - cm
+        particles[i].velocity = v_init + SVector(-ω_init[1]*r[2], ω_init[1]*r[1])
+    end
+
+    bonds = build_grid_bonds(positions, particle_diam, indices)
+
+    rb = rigidbody_struct(
+        id,
+        indices, #global indices of particles in the rigidbody
+        cm,
+        SVector(v_init[1], v_init[2]),
+        SVector(0.0, 0.0, ω_init[1]),
+        total_mass,
+        bonds,
+        10
+    )
+    push!(rigidbodies, rb)
+end
 
 function build_grid_bonds(local_positions, spacing, indices)
     bonds = Tuple{Int,Int}[]

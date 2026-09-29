@@ -237,3 +237,35 @@ function create_scene2()
 
     return particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies
 end
+
+function create_scene3()
+
+    particles = Union{liquid_struct, solid_struct, gas_struct, powder_struct}[]
+    liquid = liquid_struct[]
+    liquid2 = liquid_struct[]
+    solid = solid_struct[]
+    gas = gas_struct[]
+    powder = powder_struct[]
+    rigidbodies = rigidbody_struct[]
+    softbodies = softbody_struct[]
+
+    create_sphere2!(particles, rigidbodies, length(rigidbodies)+1, [box_size_x/3, box_size_y/2], [0.0, 10.0], [0.0], 10)
+    create_sphere2!(particles, rigidbodies, length(rigidbodies)+1, [2*box_size_x/3, box_size_y/2], [0.0, -10.0], [0.0], 10)
+
+     for i in 1:500
+
+        x = rand() * box_size_x/5
+        y = rand() * box_size_y
+
+        p = liquid_struct(length(particles)+1, SVector(x,y), @SVector(zeros(2)), @SVector(zeros(2)),
+                       grid_size/2, 0.1, 0, 0,
+                       0.4, 0.0, 0.4, 0.1, 0.1,   # density, pressure, target_density, stiff_coef, viscosity_coef
+                       1, 1, 1, 1, 
+                       1, "liquid")
+        push!(liquid, p)
+        push!(particles, p)
+    end   
+
+
+    return particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies
+end

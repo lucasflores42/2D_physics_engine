@@ -34,7 +34,7 @@ include("relativity_functions.jl")
 # ----------------------------------------------------------------------------- 
 function simulation_step(particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
 
-    particle_physics(particles, liquid, liquid2, gas, powder, solid, id_grid, cell_of_particle)
+    particle_physics(particles, liquid, liquid2, gas, powder, solid, rigidbodies, id_grid, cell_of_particle)
     rigidbody_physics(particles, rigidbodies)
     softbody_physics(particles, softbodies)
 
@@ -69,7 +69,7 @@ function main()
     t = 0.0
     step = 0
 
-    particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies = create_scene2()
+    particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies = create_scene3()
     id_grid, cell_of_particle = init_grids(particles)
 
     while t < tmax

@@ -92,7 +92,7 @@ mutable struct solid_struct
     material::String
 end
 
-function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_grid, cell_of_particle)
+function particle_physics(particles, liquid, liquid2, gas, powder, solid, rigidbodies, id_grid, cell_of_particle)
 
 
     all_liquids = [liquid; liquid2]
@@ -147,7 +147,7 @@ function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_gri
         end
 
         if p.gravity == 1
-            F_gravity = calculate_gravity(p.position, p.mass, 0, solid)
+            F_gravity = calculate_gravity(p.position, p.mass, p.rigidbody, rigidbodies)
         else
             F_gravity = @SVector zeros(2)
         end
@@ -173,7 +173,7 @@ function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_gri
         end
 
         if p.gravity == 1
-            F_gravity = -1 * calculate_gravity(p.position, p.mass, 0, solid)
+            F_gravity = -1 * calculate_gravity(p.position, p.mass, p.rigidbody, rigidbodies)
         else
             F_gravity = @SVector zeros(2)
         end
@@ -194,7 +194,7 @@ function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_gri
 
 
         if p.gravity == 1
-            F_gravity = calculate_gravity(p.position, p.mass, 0, solid)
+            F_gravity = calculate_gravity(p.position, p.mass, p.rigidbody, rigidbodies)
         else
             F_gravity = @SVector zeros(2)
         end
@@ -213,7 +213,7 @@ function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_gri
         end
 
         if p.gravity == 1
-            F_gravity = calculate_gravity(p.position, p.mass, 0, solid)
+            F_gravity = calculate_gravity(p.position, p.mass, p.rigidbody, rigidbodies)
         else
             F_gravity = @SVector zeros(2)
         end
@@ -225,28 +225,27 @@ function particle_physics(particles, liquid, liquid2, gas, powder, solid, id_gri
     end
 end
 
-function calculate_gravity(position, mass, id, solid)
+function calculate_gravity(position, mass, id, rigidbodies)
 
     F_gravity = @SVector zeros(2)
     
-    #=
-    for j in 1:length(solid)
+    for j in 1:length(rigidbodies)
 
-        p = solid[j]
+        rb = rigidbodies[j]
               
-        if p.material == "solid" && p.rigidbody != id
-            r_vec = p.position - position
+        if rb.id != id
+            r_vec = rb.cm - position
             r = norm(r_vec)
             
             if r > 0.0001  
-                F_gravity += gravity_coef * mass * p.mass * r_vec / (r ^ 3)
+                F_gravity += gravity_coef * mass * rb.M * r_vec / (r ^ 3)
             end
         end
     end
-    =#
     
-    #return F_gravity
-    return mass * SVector(0.0, -10.0)
+    
+    return F_gravity
+    #return mass * SVector(0.0, -10.0)
 end
 
 function erase_particle!(p, id_grid, cell_of_particle)
