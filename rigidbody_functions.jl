@@ -1,18 +1,6 @@
 # -----------------------------------------------------------------------------
 #                           RigidBody physics
 # -----------------------------------------------------------------------------
-
-mutable struct rigidbody_struct
-    id::Int
-    particle_indices::Vector{Int}
-    cm::SVector{2, Float64}
-    V::SVector{2, Float64}
-    ω::SVector{3, Float64}
-    M::Float64
-    bonds::Vector{Tuple{Int,Int}}   
-    break_threshold::Float64
-end
-
 function rigidbody_physics(particles, rigidbodies)
 
     for rb in rigidbodies

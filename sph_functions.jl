@@ -1,12 +1,7 @@
 # -----------------------------------------------------------------------------
-#                           Parameters
+#                           Smooth Particle Hydrodynamics (SPH) functions
 # ----------------------------------------------------------------------------- 
-const smoothing_length = 0.2
-const surface_tension = 0.15 
-const sph_cell_range = Int(ceil(3 * smoothing_length / grid_size))
- 
- 
- function kernel(r)
+function kernel(r)
     q = r / smoothing_length
     if q <= 1.0
         return (1.0 - 1.5*q*q + 0.75*q*q*q) / (π * smoothing_length^2)

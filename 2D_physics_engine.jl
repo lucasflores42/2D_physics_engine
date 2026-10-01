@@ -3,26 +3,20 @@
 using Plots, LinearAlgebra, StaticArrays #, GLMakie
 
 # -----------------------------------------------------------------------------
-#                           Parameters
+#                           Includes
 # ----------------------------------------------------------------------------- 
-# 270 height and 480 width, total 129,600 pixels.
-const grid_size = 1.0
-const pixel_size_x = 480
-const pixel_size_y = 270 
-const box_size_x = pixel_size_x * grid_size
-const box_size_y = pixel_size_y * grid_size
+include("parameters.jl")
+include("structs.jl")
+include("scenes_functions.jl")
 
-const tmax = 1000.0
-const dt = 0.01
-
-include("sph_functions.jl")
+include("particle_functions.jl")
 include("rigidbody_functions.jl")
 include("softbody_functions.jl")
-include("particle_functions.jl")
+
 include("collision_functions.jl")
+include("sph_functions.jl")
 include("other_functions.jl")
-include("material_functions.jl")
-include("scenes_functions.jl")
+
 include("electromag_functions.jl")
 include("quantum_functions.jl")
 include("thermo_functions.jl")

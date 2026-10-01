@@ -1,13 +1,6 @@
 # -----------------------------------------------------------------------------
 #                           SoftBody physics
 # ----------------------------------------------------------------------------- 
-mutable struct softbody_struct
-    particle_indices::Vector{Int}
-    constraints::Vector{Tuple{Int,Int,Float64}}   # (local_i, local_j, rest_length)
-    stiffness::Float64
-    pinned::Vector{Bool}
-end
-
 function softbody_physics(particles, softbodies)
     for sb in softbodies
 

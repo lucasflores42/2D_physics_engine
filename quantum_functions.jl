@@ -1,9 +1,9 @@
 
-function position_uncertenty()
+function position_uncertainty()
 
 end
 
-function difraction()
+function diffraction()
 
 end
 
