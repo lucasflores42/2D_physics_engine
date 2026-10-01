@@ -2,9 +2,9 @@
 #Pkg.add(["StaticArrays", "Plots", "LinearAlgebra", "GLMakie"])
 using Plots, LinearAlgebra, StaticArrays #, GLMakie
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 #                           Includes
-# ----------------------------------------------------------------------------- 
+# ------------------------------------------------------------------------ 
 include("parameters.jl")
 include("structs.jl")
 include("scenes_functions.jl")
@@ -23,9 +23,9 @@ include("thermo_functions.jl")
 include("relativity_functions.jl")
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 #                           Simulation step
-# ----------------------------------------------------------------------------- 
+# ------------------------------------------------------------------------ 
 function simulation_step(particles, liquid, liquid2, gas, powder, solid, rigidbodies, softbodies, id_grid, cell_of_particle)
 
     particle_physics(particles, liquid, liquid2, gas, powder, solid, rigidbodies, id_grid, cell_of_particle)
@@ -38,9 +38,9 @@ function simulation_step(particles, liquid, liquid2, gas, powder, solid, rigidbo
     update_grids!(particles, id_grid, cell_of_particle)
 end
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 #                           Visualization
-# ----------------------------------------------------------------------------- 
+# ------------------------------------------------------------------------ 
 function visualization(particles, id_grid, step)
 
     material_grid = build_material_grid(particles, id_grid)
@@ -56,9 +56,9 @@ function visualization(particles, id_grid, step)
     return plt
 end
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 #                           Main Simulation
-# ----------------------------------------------------------------------------- 
+# ------------------------------------------------------------------------ 
 function main()
     t = 0.0
     step = 0

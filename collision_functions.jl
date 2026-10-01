@@ -1,6 +1,6 @@
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 #                           Calculate all collisions
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 function collision_physics!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle)
 
     n_particles = length(particles)
@@ -89,9 +89,9 @@ function collision_physics!(particles, rigidbodies, powder, liquid, gas, id_grid
     end
 end
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 #                           Single resolve function — handles every pair type
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 function resolve_pair!(particles, rigidbodies, powder, liquid, gas, id_grid, cell_of_particle, i, j, pos_correction, vel_correction, contact_count, cm_correction, V_correction, ω_correction, rb_contact_count, pending_breaks)
 
     n_particles = length(pos_correction)  

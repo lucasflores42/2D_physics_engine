@@ -1,4 +1,3 @@
-const c = 3 * 10^8 
 
 # função contração do espaço
 function space_contraction(particles, p)
